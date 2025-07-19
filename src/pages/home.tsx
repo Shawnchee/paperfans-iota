@@ -1,109 +1,33 @@
-"use client";
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProjectCard } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Search, TrendingUp, Users, DollarSign } from "lucide-react";
 import type { Project } from "@/lib/types";
 
-const categories = [
-  "All",
-  "AI/ML",
-  "Quantum",
-  "Biotech",
-  "Climate",
-  "Neuro",
-  "Crypto",
-];
-
-// Mock data for development
-const mockProjects: Project[] = [
-  {
-    id: 1,
-    title: "Decentralized Content Platform",
-    abstract:
-      "A revolutionary platform for content creators to monetize their work using IOTA technology.",
-    category: "Crypto",
-    authorName: "PaperFans Team",
-    authorAffiliation: "PaperFans IOTA",
-    fundingGoal: 50000,
-    currentFunding: 35000,
-    backerCount: 1250,
-    daysLeft: 15,
-    expectedRoi: 25,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-  {
-    id: 2,
-    title: "Community Governance Tool",
-    abstract:
-      "A tool for decentralized communities to make collective decisions and manage resources.",
-    category: "Crypto",
-    authorName: "DAO Collective",
-    authorAffiliation: "DAO Research Lab",
-    fundingGoal: 25000,
-    currentFunding: 18000,
-    backerCount: 890,
-    daysLeft: 8,
-    expectedRoi: 18,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-  {
-    id: 3,
-    title: "AI-Powered Research Assistant",
-    abstract:
-      "An intelligent assistant that helps researchers discover, analyze, and synthesize scientific literature.",
-    category: "AI/ML",
-    authorName: "Dr. Sarah Chen",
-    authorAffiliation: "Stanford University",
-    fundingGoal: 75000,
-    currentFunding: 52000,
-    backerCount: 2100,
-    daysLeft: 22,
-    expectedRoi: 30,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-];
+const categories = ["All", "AI/ML", "Quantum", "Biotech", "Climate", "Neuro", "Crypto"];
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Use mock data for now - in production this would be a real API call
-  const {
-    data: projects = mockProjects,
-    isLoading,
-    error,
-  } = useQuery<Project[]>({
+  const { data: projects = [], isLoading, error } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
-    queryFn: async () => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return mockProjects;
-    },
   });
 
   const filteredProjects = projects.filter((project) => {
-    const matchesCategory =
-      selectedCategory === "All" || project.category === selectedCategory;
-    const matchesSearch =
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.abstract.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.authorName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || project.category === selectedCategory;
+    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.abstract.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.authorName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const totalFunding = projects.reduce(
-    (sum, project) => sum + project.currentFunding,
-    0
-  );
+  const totalFunding = projects.reduce((sum, project) => sum + project.currentFunding, 0);
   const totalProjects = projects.length;
-  const totalResearchers = new Set(projects.map((p) => p.authorName)).size;
+  const totalResearchers = new Set(projects.map(p => p.authorName)).size;
 
   if (error) {
     return (
@@ -124,32 +48,27 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <img
-            src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080"
-            alt="Futuristic technology interface"
-            className="w-full h-full object-cover"
+          <img 
+            src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080" 
+            alt="Futuristic technology interface" 
+            className="w-full h-full object-cover" 
           />
         </div>
-
+        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-7xl font-mono font-bold mb-6">
-            <span className="neon-text neon-cyan">Decentralized</span>
-            <br />
+            <span className="neon-text neon-cyan">Decentralized</span><br />
             <span className="text-white">Research Funding</span>
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Democratize scientific research through Web3. Fund breakthrough
-            papers, own future revenue, and accelerate human knowledge.
+            Democratize scientific research through Web3. Fund breakthrough papers, own future revenue, and accelerate human knowledge.
           </p>
-
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button className="px-8 py-4 bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50 transition-all duration-300 animate-glow">
               Explore Research
             </Button>
-            <Button
-              variant="outline"
-              className="px-8 py-4 glass-effect hover:bg-white/10 transition-all duration-300"
-            >
+            <Button variant="outline" className="px-8 py-4 glass-effect hover:bg-white/10 transition-all duration-300">
               Submit Paper
             </Button>
           </div>
@@ -226,10 +145,7 @@ export default function Home() {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="glass-effect rounded-xl h-96 animate-pulse"
-                />
+                <div key={i} className="glass-effect rounded-xl h-96 animate-pulse" />
               ))}
             </div>
           ) : filteredProjects.length === 0 ? (
