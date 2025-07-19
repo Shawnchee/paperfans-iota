@@ -82,32 +82,45 @@ export async function POST(request: Request) {
       }
     }
 
-    // Transform frontend data to database format
+    // Transform frontend data to database format for research_projects
     const projectData = {
       title: body.title,
       abstract: body.abstract,
       category: body.category,
+      domain: body.domain,
+      tags: body.tags,
       author_name: body.authorName,
       author_affiliation: body.authorAffiliation,
       author_image: body.authorImage,
+      orcid_id: body.orcidId,
       image_url: body.imageUrl,
       funding_goal: body.fundingGoal,
-      current_funding: 0, // Start with 0 funding
-      backer_count: 0, // Start with 0 backers
       days_left: body.daysLeft,
       technical_approach: body.technicalApproach,
+      proposal_doc_url: body.proposalDocUrl,
+      budget: body.budget,
+      goal_summary: body.goalSummary,
+      platform_allocation: body.platformAllocation,
+      research_team_allocation: body.researchTeamAllocation,
+      investor_allocation: body.investorAllocation,
+      total_token_supply: body.totalTokenSupply,
+      platform_tokens: body.platformTokens,
+      research_team_tokens: body.researchTeamTokens,
+      investor_tokens: body.investorTokens,
       timeline: body.timeline ? JSON.stringify(body.timeline) : null,
-      recent_activity: body.recentActivity ? JSON.stringify(body.recentActivity) : null,
-      funding_tiers: body.fundingTiers ? JSON.stringify(body.fundingTiers) : null,
-      author_id: user.id // Add the authenticated user's ID
+      returns: body.returns ? JSON.stringify(body.returns) : null,
+      artifacts: body.artifacts ? JSON.stringify(body.artifacts) : null,
+      status: body.status,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }
 
-    console.log('--- CREATE PROJECT ATTEMPT ---');
+    console.log('--- CREATE RESEARCH PROJECT ATTEMPT ---');
     console.log('Request body:', body);
     console.log('projectData:', projectData);
 
     const { data: project, error } = await supabase
-      .from('projects')
+      .from('research_projects')
       .insert(projectData)
       .select()
       .single()

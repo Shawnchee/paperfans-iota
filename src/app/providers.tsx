@@ -27,12 +27,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const networks = {
     devnet: { url: getFullnodeUrl('devnet') },
-    testnet: { url: getFullnodeUrl('testnet') },
+    testnet: { url: "https://api.testnet.iota.cafe" },
   };
 
   return (
     <QueryClientProvider client={queryClient}>
-      <IotaClientProvider networks={networks} defaultNetwork="devnet">
+      <IotaClientProvider networks={networks} defaultNetwork="testnet">
         <WalletProvider>
           <AuthProvider>
             <ThemeProvider defaultTheme="dark">
