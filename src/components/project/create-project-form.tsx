@@ -1,4 +1,5 @@
 "use client";
+import { ConnectButton } from "@iota/dapp-kit";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,11 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, Plus, X } from "lucide-react";
+import { Loader2, Upload, Plus, X, AlertCircle } from "lucide-react";
+import { Transaction } from "@iota/iota-sdk/transactions";
+import { useCurrentAccount, useSignAndExecuteTransaction } from "@iota/dapp-kit";
+import { RESEARCH_CONTRACT_CONFIG } from "@/lib/researchPaperIscConfig";
+import { ExternalLink } from "lucide-react";
 
 interface CreateProjectFormData {
   title: string;
@@ -70,6 +75,43 @@ export function CreateProjectForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [createdTokenId, setCreatedTokenId] = useState<string | null>(null);
+  const [transactionDigest, setTransactionDigest] = useState<string | null>(null);
+
+  const currentAccount = useCurrentAccount();
+  const { mutate: signAndExecute, isPending: isContractPending } = useSignAndExecuteTransaction();
+
+   function serializeString(str: string): number[] {
+    return Array.from(new TextEncoder().encode(str));
+  }
+  
+  // Add function to serialize string arrays for IOTA contract calls
+  function serializeStringArray(strArray: string[]): number[] {
+    const result: number[] = [];
+    
+    // Vector length as u32 (little-endian)
+    result.push(
+      strArray.length, 
+      0, 
+      0, 
+      0
+    );
+    
+    for (const str of strArray) {
+      const bytes = serializeString(str);
+      // String length as u32 (little-endian)
+      result.push(
+        bytes.length, 
+        0, 
+        0, 
+        0
+      );
+      // Actual bytes
+      result.push(...bytes);
+    }
+    
+    return result;
+  }
 
   const [formData, setFormData] = useState<CreateProjectFormData>({
     title: "",
@@ -183,59 +225,150 @@ export function CreateProjectForm() {
     setIsLoading(true);
 
     try {
-      const authHeaders = getAuthHeaders();
-      if (!authHeaders) {
+      // First create the blockchain token
+      if (currentAccount) {
+        // Create transaction for the smart contract
+        const transaction = new Transaction();
+        
+        // Prepare tags and revenue models arrays
+        const tagsArray = formData.tags.length > 0 ? formData.tags : ["research"];
+        const revenueModelsArray = formData.returns.revenueModels.length > 0 
+          ? formData.returns.revenueModels 
+          : ["Token Royalties"];
+
+        // Call the create_proposal function on the smart contract
+        transaction.moveCall({
+          package: RESEARCH_CONTRACT_CONFIG.PACKAGE_ID,
+          module: "ResearchToken",
+          function: "create_proposal",
+          arguments: [
+            // Basic Information
+            transaction.pure.vector("u8", serializeString(formData.title)),
+            transaction.pure.vector("u8", serializeString(formData.abstract)),
+            transaction.pure.vector("u8", serializeString(formData.category)),
+            transaction.pure.vector("u8", serializeString(formData.domain || formData.category)),
+            transaction.pure.vector("u8", serializeStringArray(tagsArray)),
+            transaction.pure.vector("u8", serializeString(formData.technicalApproach)),
+            transaction.pure.vector("u8", serializeString(formData.imageUrl)),
+            
+            // Author Information
+            transaction.pure.vector("u8", serializeString(formData.authorName)),
+            transaction.pure.vector("u8", serializeString(formData.authorAffiliation)),
+            transaction.pure.vector("u8", serializeString(formData.authorImage)),
+            transaction.pure.vector("u8", serializeString(formData.orcidId || "")),
+            
+            // Funding Details
+            transaction.pure.u64(BigInt(formData.fundingGoal)),
+            transaction.pure.u64(BigInt(formData.daysLeft)),
+            transaction.pure.u64(BigInt(researchTeamPct)),
+            
+            // Returns/Royalties
+            transaction.pure.vector("u8", serializeStringArray(revenueModelsArray)),
+            
+            // Treasury cap and policy cap IDs
+            transaction.object(RESEARCH_CONTRACT_CONFIG.TREASURY_CAP_ID),
+            transaction.object(RESEARCH_CONTRACT_CONFIG.POLICY_CAP_ID),
+          ],
+        });
+
+        transaction.setGasBudget(30_000_000);
+
+        // Execute the transaction
+        await signAndExecute(
+          {
+            transaction,
+            chain: RESEARCH_CONTRACT_CONFIG.NETWORK,
+          },
+          {
+            onSuccess: async (result) => {
+              setTransactionDigest(result.digest);
+              
+              // Now save the project details to your backend API including the transaction digest
+              const authHeaders = getAuthHeaders();
+              if (!authHeaders) {
+                toast({
+                  title: "Authentication Error",
+                  description: "Please sign in again",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              // Prepare payload with transaction details
+              const payload = {
+                title: formData.title,
+                abstract: formData.abstract,
+                category: formData.category,
+                domain: formData.domain,
+                tags: formData.tags,
+                authorName: formData.authorName,
+                authorAffiliation: formData.authorAffiliation,
+                authorImage: formData.authorImage,
+                orcidId: formData.orcidId,
+                imageUrl: formData.imageUrl,
+                fundingGoal: formData.fundingGoal,
+                daysLeft: formData.daysLeft,
+                technicalApproach: formData.technicalApproach,
+                timeline: formData.timeline,
+                researchTeamPercentage: researchTeamPct,
+                investorPercentage: investorPct,
+                platformPercentage: platformPct,
+                revenueModels: formData.returns.revenueModels,
+                transactionInfo: {
+                  digest: result.digest,
+                  network: RESEARCH_CONTRACT_CONFIG.NETWORK
+                }
+              };
+
+              const response = await fetch("/api/projects", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...authHeaders,
+                },
+                body: JSON.stringify(payload),
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to create project in backend");
+              }
+
+              const apiResult = await response.json();
+
+              toast({
+                title: "Research CLT Created!",
+                description: "Your research project has been tokenized successfully",
+              });
+
+              router.push(`/project/${apiResult.id}`);
+            },
+            onError: (error) => {
+              console.error("Transaction error:", error);
+              toast({
+                title: "Transaction Failed",
+                description: `Failed to create token: ${error.message}`,
+                variant: "destructive",
+              });
+              setIsLoading(false);
+            },
+          }
+        );
+      } else {
+        // Fallback if wallet not connected
         toast({
-          title: "Authentication Error",
-          description: "Please sign in again",
+          title: "Wallet Not Connected",
+          description: "Please connect your wallet to create a research token",
           variant: "destructive",
         });
-        return;
+        setIsLoading(false);
       }
-
-      // Prepare payload to match backend API (camelCase for required fields, timeline as array)
-      const payload = {
-        title: formData.title,
-        abstract: formData.abstract,
-        category: formData.category,
-        authorName: formData.authorName,
-        authorAffiliation: formData.authorAffiliation,
-        authorImage: formData.authorImage,
-        imageUrl: formData.imageUrl,
-        fundingGoal: formData.fundingGoal,
-        daysLeft: formData.daysLeft,
-        technicalApproach: formData.technicalApproach,
-        timeline: formData.timeline, // send as array, let backend stringify
-      };
-
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create project");
-      }
-
-      const result = await response.json();
-
-      toast({
-        title: "Project Created!",
-        description: "Your research project has been published successfully",
-      });
-
-      router.push(`/project/${result.id}`);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error:", error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create project. Please try again.",
+        description: error.message || "Failed to create project. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -264,6 +397,22 @@ export function CreateProjectForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8">
+  {!currentAccount && (
+    <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+      <div className="flex items-center gap-3">
+        <AlertCircle className="h-5 w-5 text-red-400" />
+        <h3 className="text-lg font-medium text-red-300">
+          Wallet Connection Required
+        </h3>
+      </div>
+      <p className="text-gray-300 text-sm mt-2">
+        Connect your IOTA wallet to publish your research project as a token.
+      </p>
+      <div className="mt-3">
+        <ConnectButton />
+      </div>
+    </div>
+  )}
             {/* Basic Information */}
             <div className="space-y-6">
               <h3 className="text-xl font-semibold neon-purple">
@@ -740,29 +889,31 @@ export function CreateProjectForm() {
 
             {/* Submit Button */}
             <div className="flex justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                className="sci-fi-input hover:bg-neon-cyan/20"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="sci-fi-button text-white font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Project...
-                  </>
-                ) : (
-                  <span className="relative z-10">Publish Project</span>
-                )}
-              </Button>
-            </div>
+  <Button
+    type="button"
+    variant="outline"
+    onClick={() => router.back()}
+    className="sci-fi-input hover:bg-neon-cyan/20"
+  >
+    Cancel
+  </Button>
+  <Button
+    type="submit"
+    disabled={isLoading || isContractPending || !currentAccount}
+    className="sci-fi-button text-white font-semibold"
+  >
+    {isLoading || isContractPending ? (
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {isContractPending ? "Creating Research Token..." : "Creating Project..."}
+      </>
+    ) : (
+      <span className="relative z-10">
+        {currentAccount ? "Publish Project" : "Connect Wallet to Publish"}
+      </span>
+    )}
+  </Button>
+</div>
           </form>
         </CardContent>
       </Card>
