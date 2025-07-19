@@ -12,8 +12,9 @@ export interface Project {
   backerCount: number;
   daysLeft: number;
   technicalApproach?: string;
-  timeline?: string;
-  recentActivity?: string;
+  timeline?: string | TimelineItem[];
+  recentActivity?: string | ActivityItem[];
+  fundingTiers?: FundingTier[];
   createdAt: string;
   updatedAt: string;
 }

@@ -138,6 +138,7 @@ export async function PATCH(
     if (body.technicalApproach !== undefined) updateData.technical_approach = body.technicalApproach
     if (body.timeline !== undefined) updateData.timeline = body.timeline ? JSON.stringify(body.timeline) : null
     if (body.recentActivity !== undefined) updateData.recent_activity = body.recentActivity ? JSON.stringify(body.recentActivity) : null
+    if (body.fundingTiers !== undefined) updateData.funding_tiers = body.fundingTiers ? JSON.stringify(body.fundingTiers) : null
 
     const { data: project, error } = await supabase
       .from('projects')

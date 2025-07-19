@@ -158,17 +158,21 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     enabled: !!projectId,
   });
 
-  const { data: fundingTiers = [] } = useQuery<FundingTier[]>({
-    queryKey: ["/api/projects", projectId, "funding-tiers"],
-    queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}/funding-tiers`);
-      if (!response.ok) {
-        return [];
-      }
-      return response.json();
-    },
-    enabled: !!projectId,
-  });
+  // Helper function to safely parse JSON
+  const safeJsonParse = (value: any) => {
+    if (!value) return [];
+    if (typeof value === "object") return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.error("JSON parse error:", error);
+      return [];
+    }
+  };
+
+  const timeline: TimelineItem[] = safeJsonParse(project?.timeline);
+  const recentActivity: ActivityItem[] = safeJsonParse(project?.recentActivity);
+  const fundingTiers: FundingTier[] = safeJsonParse(project?.fundingTiers);
 
   const fundMutation = useMutation<FundingResponse, Error, FundingRequest>({
     mutationFn: async (data) => {
@@ -206,21 +210,6 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       });
     },
   });
-
-  // Helper function to safely parse JSON
-  const safeJsonParse = (value: any) => {
-    if (!value) return [];
-    if (typeof value === "object") return value;
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      console.error("JSON parse error:", error);
-      return [];
-    }
-  };
-
-  const timeline: TimelineItem[] = safeJsonParse(project?.timeline);
-  const recentActivity: ActivityItem[] = safeJsonParse(project?.recentActivity);
 
   if (!projectId) {
     return <div>Loading...</div>;

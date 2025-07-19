@@ -110,6 +110,8 @@ export function EditProjectForm({ projectId }: EditProjectFormProps) {
           headers: authHeaders,
         });
 
+        
+
         if (!response.ok) {
           if (response.status === 404) {
             toast({

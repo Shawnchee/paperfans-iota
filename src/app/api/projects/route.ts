@@ -34,7 +34,8 @@ export async function GET() {
       timeline: project.timeline,
       recentActivity: project.recent_activity,
       createdAt: project.created_at,
-      updatedAt: project.updated_at
+      updatedAt: project.updated_at,
+      fundingTiers: project.funding_tiers,
     })) || []
 
     return NextResponse.json(transformedProjects)
@@ -97,6 +98,8 @@ export async function POST(request: Request) {
       technical_approach: body.technicalApproach,
       timeline: body.timeline ? JSON.stringify(body.timeline) : null,
       recent_activity: body.recentActivity ? JSON.stringify(body.recentActivity) : null,
+      funding_tiers: body.fundingTiers ? JSON.stringify(body.fundingTiers) : null,
+      funding_tiers: body.fundingTiers ? JSON.stringify(body.fundingTiers) : null,
       author_id: user.id // Add the authenticated user's ID
     }
 
