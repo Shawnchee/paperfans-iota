@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
-import { Copy, Download, Share2 } from "lucide-react";
+import { Copy, Download, Share2, X } from "lucide-react";
 
 // Mock data for demonstration
 const mockProject = {
@@ -116,6 +116,9 @@ export default function ProjectPage() {
   const [tab, setTab] = useState("basic");
   const [comment, setComment] = useState("");
   const [copied, setCopied] = useState(false);
+  const [fundModalOpen, setFundModalOpen] = useState(false);
+  const [musdtAmount, setMusdtAmount] = useState("");
+  const [mockWallet, setMockWallet] = useState(1000); // mock wallet balance
 
   // Pie chart placeholder
   function PieChart({ data }: { data: { label: string; value: number }[] }) {
@@ -139,6 +142,9 @@ export default function ProjectPage() {
     setTimeout(() => setCopied(false), 1200);
   };
 
+  const tokenPrice = mockProject.funding.tokenPrice;
+  const paperTokens = musdtAmount && parseFloat(musdtAmount) > 0 ? (parseFloat(musdtAmount) / tokenPrice) : 0;
+
   return (
     <div className="min-h-screen pt-20 bg-gradient-to-br from-black via-gray-900 to-black">
       <div className="max-w-5xl mx-auto px-4">
@@ -148,7 +154,7 @@ export default function ProjectPage() {
             <h1 className="text-3xl font-bold mb-2">{mockProject.title}</h1>
             <p className="text-gray-400 max-w-2xl">{mockProject.abstract}</p>
           </div>
-          <Button className="sci-fi-button px-6 py-2 text-lg font-semibold shadow-neon-cyan">Fund This Project</Button>
+          <Button className="sci-fi-button px-6 py-2 text-lg font-semibold shadow-neon-cyan" onClick={() => setFundModalOpen(true)}>Fund This Project</Button>
         </div>
 
         {/* Tabs */}
@@ -447,6 +453,38 @@ export default function ProjectPage() {
           )}
         </div>
       </div>
+      {/* Fund Modal */}
+      {fundModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10, 20, 40, 0.95)' }}>
+          <div className="rounded-xl p-8 shadow-2xl border border-neon-cyan/40 min-w-[340px] flex flex-col items-center bg-gradient-to-br from-[#0a1a28] via-[#1a2233] to-[#0a1a28] backdrop-blur-xl relative">
+            <button className="absolute top-3 right-3 text-gray-400 hover:text-neon-cyan" onClick={() => setFundModalOpen(false)}><X className="w-5 h-5" /></button>
+            <h2 className="text-xl font-bold neon-cyan mb-4">Fund This Project</h2>
+            <div className="w-full mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-300">Your MUSDT Balance:</span>
+                <span className="font-mono neon-cyan">{mockWallet.toLocaleString(undefined, { maximumFractionDigits: 2 })} MUSDT</span>
+              </div>
+              <label className="block text-gray-400 mb-1 font-medium">Amount to Fund (MUSDT)</label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={musdtAmount}
+                onChange={e => setMusdtAmount(e.target.value)}
+                className="sci-fi-input text-white placeholder-gray-400 mb-2"
+                placeholder="Enter amount"
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-gray-300">You will receive:</span>
+                <span className="font-mono neon-purple">{paperTokens.toLocaleString(undefined, { maximumFractionDigits: 4 })} PAPER</span>
+              </div>
+            </div>
+            <Button className="w-full sci-fi-button text-white font-semibold mt-2" onClick={() => setFundModalOpen(false)} disabled={!musdtAmount || parseFloat(musdtAmount) <= 0}>
+              Confirm (Mock)
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

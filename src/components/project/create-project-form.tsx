@@ -193,18 +193,28 @@ export function CreateProjectForm() {
         return;
       }
 
+      // Prepare payload to match backend API (camelCase for required fields, timeline as array)
+      const payload = {
+        title: formData.title,
+        abstract: formData.abstract,
+        category: formData.category,
+        authorName: formData.authorName,
+        authorAffiliation: formData.authorAffiliation,
+        authorImage: formData.authorImage,
+        imageUrl: formData.imageUrl,
+        fundingGoal: formData.fundingGoal,
+        daysLeft: formData.daysLeft,
+        technicalApproach: formData.technicalApproach,
+        timeline: formData.timeline, // send as array, let backend stringify
+      };
+
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...authHeaders,
         },
-        body: JSON.stringify({
-          ...formData,
-          timeline: formData.timeline.filter(
-            (item) => item.phase && item.description
-          ),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

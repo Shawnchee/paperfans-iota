@@ -99,9 +99,12 @@ export async function POST(request: Request) {
       timeline: body.timeline ? JSON.stringify(body.timeline) : null,
       recent_activity: body.recentActivity ? JSON.stringify(body.recentActivity) : null,
       funding_tiers: body.fundingTiers ? JSON.stringify(body.fundingTiers) : null,
-      funding_tiers: body.fundingTiers ? JSON.stringify(body.fundingTiers) : null,
       author_id: user.id // Add the authenticated user's ID
     }
+
+    console.log('--- CREATE PROJECT ATTEMPT ---');
+    console.log('Request body:', body);
+    console.log('projectData:', projectData);
 
     const { data: project, error } = await supabase
       .from('projects')
@@ -110,9 +113,10 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error('Error creating project:', error)
+      console.error('Error creating project:', error, { projectData, body });
+      if (error.details) console.error('Supabase error details:', error.details);
       return NextResponse.json(
-        { error: 'Failed to create project' },
+        { error: 'Failed to create project', details: error.message, supabase: error.details },
         { status: 500 }
       )
     }
