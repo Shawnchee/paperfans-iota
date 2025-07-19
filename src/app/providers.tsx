@@ -8,6 +8,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { useState } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { IotaClientProvider, WalletProvider } from '@iota/dapp-kit';
+import { getFullnodeUrl } from '@iota/iota-sdk/client';
+import '@iota/dapp-kit/dist/index.css';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -22,16 +25,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
+  const networks = {
+    devnet: { url: getFullnodeUrl('devnet') },
+    testnet: { url: getFullnodeUrl('testnet') },
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider defaultTheme="dark">
-          <Navbar />
-          {children}
-          <Footer />
-          <Toaster />
-        </ThemeProvider>
-      </AuthProvider>
+      <IotaClientProvider networks={networks} defaultNetwork="devnet">
+        <WalletProvider>
+          <AuthProvider>
+            <ThemeProvider defaultTheme="dark">
+              <Navbar />
+              {children}
+              <Footer />
+              <Toaster />
+            </ThemeProvider>
+          </AuthProvider>
+        </WalletProvider>
+      </IotaClientProvider>
     </QueryClientProvider>
   );
 }

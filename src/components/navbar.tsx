@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConnectButton } from '@iota/dapp-kit';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -26,6 +27,7 @@ export function Navbar() {
     { href: "/", label: "Research" },
     { href: "/about", label: "About" },
     { href: "/docs", label: "Documentation" },
+    { href: "/onramp", label: "Onramping & Wallet" },
   ];
 
   return (
@@ -58,6 +60,9 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
+
+            {/* Connect Wallet Button */}
+            <ConnectButton />
 
             <Button
               variant="ghost"
@@ -134,6 +139,7 @@ export function Navbar() {
 
           {/* Mobile Navigation */}
           <div className="md:hidden flex items-center space-x-2">
+            <ConnectButton />
             <Button
               variant="ghost"
               size="icon"

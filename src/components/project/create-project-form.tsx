@@ -28,26 +28,27 @@ interface CreateProjectFormData {
   title: string;
   abstract: string;
   category: string;
+  domain: string;
+  tags: string[];
   authorName: string;
   authorAffiliation: string;
   authorImage: string;
+  orcidId: string;
   imageUrl: string;
   fundingGoal: number;
   daysLeft: number;
   technicalApproach: string;
   timeline: Array<{
     phase: string;
-    duration: string;
+    estimatedStartDate: string;
+    estimatedEndDate: string;
+    amountNeeded: number;
     description: string;
     status: "pending" | "active" | "completed";
   }>;
-  fundingTiers: Array<{
-    name: string;
-    description: string;
-    amount: number;
-    benefits: string[];
-    maxBackers?: number;
-  }>;
+  returns: {
+    revenueModels: string[];
+  };
 }
 
 const categories = [
@@ -74,9 +75,12 @@ export function CreateProjectForm() {
     title: "",
     abstract: "",
     category: "",
+    domain: "",
+    tags: [],
     authorName: user?.name || "",
     authorAffiliation: "",
     authorImage: user?.avatar_url || "",
+    orcidId: "",
     imageUrl: "",
     fundingGoal: 0,
     daysLeft: 30,
@@ -84,19 +88,16 @@ export function CreateProjectForm() {
     timeline: [
       {
         phase: "Research Phase",
-        duration: "3 months",
+        estimatedStartDate: "",
+        estimatedEndDate: "",
+        amountNeeded: 0,
         description: "Initial research and literature review",
         status: "pending",
       },
     ],
-    fundingTiers: [
-      {
-        name: "Early Supporter",
-        description: "Basic support tier",
-        amount: 50,
-        benefits: ["Access to research updates", "Name in acknowledgments"],
-      },
-    ],
+    returns: {
+      revenueModels: [],
+    },
   });
 
   const handleInputChange = (
@@ -116,7 +117,9 @@ export function CreateProjectForm() {
         ...prev.timeline,
         {
           phase: "",
-          duration: "",
+          estimatedStartDate: "",
+          estimatedEndDate: "",
+          amountNeeded: 0,
           description: "",
           status: "pending" as const,
         },
@@ -137,83 +140,6 @@ export function CreateProjectForm() {
     setFormData((prev) => ({
       ...prev,
       timeline: prev.timeline.filter((_, i) => i !== index),
-    }));
-  };
-
-  const addFundingTier = () => {
-    setFormData((prev) => ({
-      ...prev,
-      fundingTiers: [
-        ...prev.fundingTiers,
-        {
-          name: "",
-          description: "",
-          amount: 0,
-          benefits: [""],
-        },
-      ],
-    }));
-  };
-
-  const updateFundingTier = (index: number, field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      fundingTiers: prev.fundingTiers.map((tier, i) =>
-        i === index ? { ...tier, [field]: value } : tier
-      ),
-    }));
-  };
-
-  const updateFundingTierBenefit = (
-    tierIndex: number,
-    benefitIndex: number,
-    value: string
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      fundingTiers: prev.fundingTiers.map((tier, i) =>
-        i === tierIndex
-          ? {
-              ...tier,
-              benefits: tier.benefits.map((benefit, j) =>
-                j === benefitIndex ? value : benefit
-              ),
-            }
-          : tier
-      ),
-    }));
-  };
-
-  const addFundingTierBenefit = (tierIndex: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      fundingTiers: prev.fundingTiers.map((tier, i) =>
-        i === tierIndex ? { ...tier, benefits: [...tier.benefits, ""] } : tier
-      ),
-    }));
-  };
-
-  const removeFundingTierBenefit = (
-    tierIndex: number,
-    benefitIndex: number
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      fundingTiers: prev.fundingTiers.map((tier, i) =>
-        i === tierIndex
-          ? {
-              ...tier,
-              benefits: tier.benefits.filter((_, j) => j !== benefitIndex),
-            }
-          : tier
-      ),
-    }));
-  };
-
-  const removeFundingTier = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      fundingTiers: prev.fundingTiers.filter((_, i) => i !== index),
     }));
   };
 
@@ -278,9 +204,6 @@ export function CreateProjectForm() {
           timeline: formData.timeline.filter(
             (item) => item.phase && item.description
           ),
-          fundingTiers: formData.fundingTiers.filter(
-            (tier) => tier.name && tier.amount > 0
-          ),
         }),
       });
 
@@ -306,6 +229,17 @@ export function CreateProjectForm() {
       setIsLoading(false);
     }
   };
+
+  const [researchTeamPct, setResearchTeamPct] = useState(10);
+  const platformPct = 5;
+  const maxResearchTeamPct = 95;
+  const investorPct = Math.max(0, 100 - platformPct - researchTeamPct);
+  const fundraisingGoal = formData.fundingGoal || 0;
+  const totalTokens = investorPct > 0 ? Math.round(fundraisingGoal / (investorPct / 100)) : 0;
+  const tokensForPlatform = Math.round(totalTokens * (platformPct / 100));
+  const tokensForResearch = Math.round(totalTokens * (researchTeamPct / 100));
+  const tokensForInvestors = Math.round(totalTokens * (investorPct / 100));
+  const researchTeamError = researchTeamPct < 0 || researchTeamPct > (100 - platformPct);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -376,6 +310,34 @@ export function CreateProjectForm() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="domain" className="text-sm font-medium text-gray-300">Domain / Field *</Label>
+                <Input
+                  id="domain"
+                  value={formData.domain}
+                  onChange={e => handleInputChange("domain", e.target.value)}
+                  className="sci-fi-input text-white placeholder-gray-400"
+                  placeholder="e.g. Biotech, AI, Climate"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tags" className="text-sm font-medium text-gray-300">Tags (comma-separated)</Label>
+                <Input
+                  id="tags"
+                  value={formData.tags.join(", ")}
+                  onChange={e => handleInputChange("tags", e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
+                  className="sci-fi-input text-white placeholder-gray-400"
+                  placeholder="AI, Biotech, Drug Discovery"
+                />
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {formData.tags.map(tag => (
+                    <span key={tag} className="px-2 py-1 bg-neon-cyan/20 text-neon-cyan rounded text-xs font-mono">{tag}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label
                   htmlFor="abstract"
                   className="text-sm font-medium text-gray-300"
@@ -391,6 +353,42 @@ export function CreateProjectForm() {
                   className="sci-fi-input text-white placeholder-gray-400 min-h-[120px]"
                   placeholder="Provide a brief overview of your research project"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="imageUrl"
+                  className="text-sm font-medium text-gray-300"
+                >
+                  Project Image URL
+                </Label>
+                <Input
+                  id="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={(e) =>
+                    handleInputChange("imageUrl", e.target.value)
+                  }
+                  className="sci-fi-input text-white placeholder-gray-400"
+                  placeholder="https://example.com/project-image.jpg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="technicalApproach"
+                  className="text-sm font-medium text-gray-300"
+                >
+                  Technical Approach
+                </Label>
+                <Textarea
+                  id="technicalApproach"
+                  value={formData.technicalApproach}
+                  onChange={(e) =>
+                    handleInputChange("technicalApproach", e.target.value)
+                  }
+                  className="sci-fi-input text-white placeholder-gray-400 min-h-[120px]"
+                  placeholder="Describe your technical methodology and approach"
                 />
               </div>
             </div>
@@ -458,12 +456,23 @@ export function CreateProjectForm() {
                   placeholder="https://example.com/avatar.jpg"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="orcidId" className="text-sm font-medium text-gray-300">ORCID ID</Label>
+                <Input
+                  id="orcidId"
+                  value={formData.orcidId}
+                  onChange={e => handleInputChange("orcidId", e.target.value)}
+                  className="sci-fi-input text-white placeholder-gray-400"
+                  placeholder="0000-0002-1825-0097"
+                />
+              </div>
             </div>
 
             {/* Project Details */}
             <div className="space-y-6">
               <h3 className="text-xl font-semibold neon-purple">
-                Project Details
+                Funding Details
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -517,40 +526,61 @@ export function CreateProjectForm() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="imageUrl"
-                  className="text-sm font-medium text-gray-300"
-                >
-                  Project Image URL
-                </Label>
-                <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) =>
-                    handleInputChange("imageUrl", e.target.value)
-                  }
-                  className="sci-fi-input text-white placeholder-gray-400"
-                  placeholder="https://example.com/project-image.jpg"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="technicalApproach"
-                  className="text-sm font-medium text-gray-300"
-                >
-                  Technical Approach
-                </Label>
-                <Textarea
-                  id="technicalApproach"
-                  value={formData.technicalApproach}
-                  onChange={(e) =>
-                    handleInputChange("technicalApproach", e.target.value)
-                  }
-                  className="sci-fi-input text-white placeholder-gray-400 min-h-[120px]"
-                  placeholder="Describe your technical methodology and approach"
-                />
+              {/* Tokenomics Section */}
+              <div className="space-y-4 mt-8">
+                <h3 className="text-xl font-semibold neon-purple">Tokenomics</h3>
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <div className="bg-black/60 rounded-lg p-4 shadow space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-gray-300">Platform Allocation (%)</Label>
+                        <Input value={platformPct} readOnly className="w-20 text-right bg-gray-800 border-none" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-gray-300">Research Team (%)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={maxResearchTeamPct}
+                          value={researchTeamPct}
+                          onChange={e => {
+                            let val = parseInt(e.target.value) || 0;
+                            if (val > (100 - platformPct)) val = 100 - platformPct;
+                            setResearchTeamPct(val);
+                          }}
+                          className={`w-20 text-right ${researchTeamError ? 'border-red-500' : ''}`}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-gray-300">Investor (%)</Label>
+                        <Input value={investorPct} readOnly className="w-20 text-right bg-gray-800 border-none" />
+                      </div>
+                      {researchTeamError && (
+                        <div className="text-red-400 text-xs mt-1">Total allocation cannot exceed 95% (platform is fixed at 5%)</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="bg-black/60 rounded-lg p-4 shadow space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-300">Total Token Supply</span>
+                        <span className="font-mono text-neon-cyan">{totalTokens.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-300">Platform (5%)</span>
+                        <span className="font-mono">{tokensForPlatform.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-300">Research Team ({researchTeamPct}%)</span>
+                        <span className="font-mono">{tokensForResearch.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-300">Investors ({investorPct}%)</span>
+                        <span className="font-mono">{tokensForInvestors.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -571,7 +601,6 @@ export function CreateProjectForm() {
                   Add Phase
                 </Button>
               </div>
-
               <div className="space-y-4">
                 {formData.timeline.map((item, index) => (
                   <div key={index} className="sci-fi-card p-4 space-y-4">
@@ -591,206 +620,111 @@ export function CreateProjectForm() {
                         </Button>
                       )}
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">
-                          Phase Name
-                        </Label>
+                        <Label className="text-xs text-gray-400">Phase Name</Label>
                         <Input
                           value={item.phase}
-                          onChange={(e) =>
-                            updateTimelineItem(index, "phase", e.target.value)
-                          }
+                          onChange={(e) => updateTimelineItem(index, "phase", e.target.value)}
                           className="sci-fi-input text-white placeholder-gray-400"
-                          placeholder="Research Phase"
+                          placeholder="Phase name"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">
-                          Duration
-                        </Label>
+                        <Label className="text-xs text-gray-400">Estimated Start Date</Label>
                         <Input
-                          value={item.duration}
-                          onChange={(e) =>
-                            updateTimelineItem(
-                              index,
-                              "duration",
-                              e.target.value
-                            )
-                          }
+                          type="date"
+                          value={item.estimatedStartDate}
+                          onChange={(e) => updateTimelineItem(index, "estimatedStartDate", e.target.value)}
                           className="sci-fi-input text-white placeholder-gray-400"
-                          placeholder="3 months"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-400">Estimated End Date</Label>
+                        <Input
+                          type="date"
+                          value={item.estimatedEndDate}
+                          onChange={(e) => updateTimelineItem(index, "estimatedEndDate", e.target.value)}
+                          className="sci-fi-input text-white placeholder-gray-400"
                         />
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs text-gray-400">
-                        Description
-                      </Label>
-                      <Textarea
-                        value={item.description}
-                        onChange={(e) =>
-                          updateTimelineItem(
-                            index,
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        className="sci-fi-input text-white placeholder-gray-400"
-                        placeholder="Describe what will be accomplished in this phase"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-400">Amount Needed ($)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={`${item.amountNeeded ?? ''}`}
+                          onChange={(e) => updateTimelineItem(index, "amountNeeded", parseFloat(e.target.value) || 0)}
+                          className="sci-fi-input text-white placeholder-gray-400"
+                          placeholder="Amount needed for this phase"
+                        />
+                        <div className="text-xs text-gray-400 mt-1">
+                          {formData.fundingGoal > 0 && item.amountNeeded > 0 ? (
+                            <span>
+                              {((item.amountNeeded / formData.fundingGoal) * 100).toFixed(2)}% of total funding goal
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-400">Description</Label>
+                        <Textarea
+                          value={item.description}
+                          onChange={(e) => updateTimelineItem(index, "description", e.target.value)}
+                          className="sci-fi-input text-white placeholder-gray-400"
+                          placeholder="Describe what will be accomplished in this phase"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
+              </div>
+              {/* Unallocated Funds */}
+              <div className="mt-4 text-right">
+                <span className="font-semibold text-gray-300">Unallocated Funds: </span>
+                <span className="font-mono text-neon-cyan">
+                  ${(
+                    formData.fundingGoal - formData.timeline.reduce((sum, item) => sum + (item.amountNeeded || 0), 0)
+                  ).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
 
-            {/* Funding Tiers */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold neon-purple">
-                  Funding Tiers
-                </h3>
-                <Button
-                  type="button"
-                  onClick={addFundingTier}
-                  variant="outline"
-                  size="sm"
-                  className="sci-fi-input hover:bg-neon-cyan/20"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Tier
-                </Button>
-              </div>
-
+            {/* Returns / Royalties */}
+            <div className="space-y-6 mt-8">
+              <h3 className="text-xl font-semibold neon-purple">Returns / Royalties</h3>
               <div className="space-y-4">
-                {formData.fundingTiers.map((tier, index) => (
-                  <div key={index} className="sci-fi-card p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-neon-cyan">
-                        Tier {index + 1}
-                      </h4>
-                      {formData.fundingTiers.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => removeFundingTier(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">
-                          Tier Name
-                        </Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-300">Expected Revenue Models</Label>
+                  <div className="flex flex-col gap-2">
+                    {formData.returns.revenueModels.map((model, i) => (
+                      <div key={i} className="flex gap-2 items-center">
                         <Input
-                          value={tier.name}
-                          onChange={(e) =>
-                            updateFundingTier(index, "name", e.target.value)
-                          }
-                          className="sci-fi-input text-white placeholder-gray-400"
-                          placeholder="Early Supporter"
+                          value={model}
+                          onChange={e => setFormData(prev => {
+                            const arr = [...prev.returns.revenueModels];
+                            arr[i] = e.target.value;
+                            return { ...prev, returns: { ...prev.returns, revenueModels: arr } };
+                          })}
+                          className="sci-fi-input text-white"
+                          placeholder="e.g. Token Royalties"
                         />
+                        <Button type="button" size="sm" variant="ghost" className="text-red-400" onClick={() => setFormData(prev => ({
+                          ...prev,
+                          returns: { ...prev.returns, revenueModels: prev.returns.revenueModels.filter((_, idx) => idx !== i) }
+                        }))}><X className="h-4 w-4" /></Button>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">
-                          Amount ($)
-                        </Label>
-                        <Input
-                          type="number"
-                          value={tier.amount}
-                          onChange={(e) =>
-                            updateFundingTier(
-                              index,
-                              "amount",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="sci-fi-input text-white placeholder-gray-400"
-                          placeholder="50"
-                          min="1"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs text-gray-400">
-                        Description
-                      </Label>
-                      <Textarea
-                        value={tier.description}
-                        onChange={(e) =>
-                          updateFundingTier(
-                            index,
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        className="sci-fi-input text-white placeholder-gray-400"
-                        placeholder="Describe what backers get at this tier"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-gray-400">
-                          Benefits
-                        </Label>
-                        <Button
-                          type="button"
-                          onClick={() => addFundingTierBenefit(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-neon-cyan hover:text-neon-purple"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Benefit
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        {tier.benefits.map((benefit, benefitIndex) => (
-                          <div
-                            key={benefitIndex}
-                            className="flex items-center space-x-2"
-                          >
-                            <Input
-                              value={benefit}
-                              onChange={(e) =>
-                                updateFundingTierBenefit(
-                                  index,
-                                  benefitIndex,
-                                  e.target.value
-                                )
-                              }
-                              className="sci-fi-input text-white placeholder-gray-400"
-                              placeholder="Benefit description"
-                            />
-                            {tier.benefits.length > 1 && (
-                              <Button
-                                type="button"
-                                onClick={() =>
-                                  removeFundingTierBenefit(index, benefitIndex)
-                                }
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-400 hover:text-red-300"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
+                    <Button type="button" size="sm" variant="outline" className="w-fit" onClick={() => setFormData(prev => ({
+                      ...prev,
+                      returns: { ...prev.returns, revenueModels: [...prev.returns.revenueModels, ""] }
+                    }))}>
+                      <Plus className="h-4 w-4 mr-1" /> Add Expected Revenue Model
+                    </Button>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 

@@ -9,7 +9,6 @@ import { Search, TrendingUp, Users, DollarSign, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import type { Project } from "@/lib/types";
 
 const categories = [
@@ -22,67 +21,11 @@ const categories = [
   "Crypto",
 ];
 
-// Mock data for development
-const mockProjects: Project[] = [
-  {
-    id: 1,
-    title: "Decentralized Content Platform",
-    abstract:
-      "A revolutionary platform for content creators to monetize their work using IOTA technology.",
-    category: "Crypto",
-    authorName: "PaperFans Team",
-    authorAffiliation: "PaperFans IOTA",
-    fundingGoal: 50000,
-    currentFunding: 35000,
-    backerCount: 1250,
-    daysLeft: 15,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-  {
-    id: 2,
-    title: "Community Governance Tool",
-    abstract:
-      "A tool for decentralized communities to make collective decisions and manage resources.",
-    category: "Crypto",
-    authorName: "DAO Collective",
-    authorAffiliation: "DAO Research Lab",
-    fundingGoal: 25000,
-    currentFunding: 18000,
-    backerCount: 890,
-    daysLeft: 8,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-  {
-    id: 3,
-    title: "AI-Powered Research Assistant",
-    abstract:
-      "An intelligent assistant that helps researchers discover, analyze, and synthesize scientific literature.",
-    category: "AI/ML",
-    authorName: "Dr. Sarah Chen",
-    authorAffiliation: "Stanford University",
-    fundingGoal: 75000,
-    currentFunding: 52000,
-    backerCount: 2100,
-    daysLeft: 22,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-];
-
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
-
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    if (!loading && user) {
-      router.push("/dashboard");
-    }
-  }, [user, loading, router]);
 
   // Fetch projects from the API
   const {
@@ -132,22 +75,6 @@ export default function Home() {
     <div className="min-h-screen pt-20 relative">
       {/* Animated Background Grid */}
       <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
-
-      {/* Floating Particles Effect */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-neon-cyan rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
-          />
-        ))}
-      </div>
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
@@ -207,10 +134,7 @@ export default function Home() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div
-              className="sci-fi-card rounded-xl p-8 text-center float"
-              style={{ animationDelay: "0s" }}
-            >
+            <div className="sci-fi-card rounded-xl p-8 text-center float" style={{ animationDelay: "0s" }}>
               <div className="relative">
                 <DollarSign className="mx-auto mb-4 h-12 w-12 neon-cyan" />
                 <div className="absolute inset-0 bg-neon-cyan/20 rounded-full blur-xl"></div>
@@ -220,10 +144,7 @@ export default function Home() {
               </div>
               <div className="text-gray-400 font-medium">Total Funding</div>
             </div>
-            <div
-              className="sci-fi-card rounded-xl p-8 text-center float"
-              style={{ animationDelay: "0.5s" }}
-            >
+            <div className="sci-fi-card rounded-xl p-8 text-center float" style={{ animationDelay: "0.5s" }}>
               <div className="relative">
                 <TrendingUp className="mx-auto mb-4 h-12 w-12 neon-purple" />
                 <div className="absolute inset-0 bg-neon-purple/20 rounded-full blur-xl"></div>
@@ -233,10 +154,7 @@ export default function Home() {
               </div>
               <div className="text-gray-400 font-medium">Active Projects</div>
             </div>
-            <div
-              className="sci-fi-card rounded-xl p-8 text-center float"
-              style={{ animationDelay: "1s" }}
-            >
+            <div className="sci-fi-card rounded-xl p-8 text-center float" style={{ animationDelay: "1s" }}>
               <div className="relative">
                 <Users className="mx-auto mb-4 h-12 w-12 neon-green" />
                 <div className="absolute inset-0 bg-neon-green/20 rounded-full blur-xl"></div>
