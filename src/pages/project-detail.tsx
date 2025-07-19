@@ -9,15 +9,22 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FundingProgress } from "@/components/funding-progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Project, FundingTier, TimelineItem, ActivityItem, FundingRequest, FundingResponse } from "@/lib/types";
+import type {
+  Project,
+  FundingTier,
+  TimelineItem,
+  ActivityItem,
+  FundingRequest,
+  FundingResponse,
+} from "@/lib/types";
 
 const categoryColors = {
   "AI/ML": "bg-neon-cyan/20 text-neon-cyan",
-  "Quantum": "bg-neon-purple/20 text-neon-purple",
-  "Biotech": "bg-neon-green/20 text-neon-green",
-  "Climate": "bg-neon-cyan/20 text-neon-cyan",
-  "Neuro": "bg-neon-purple/20 text-neon-purple",
-  "Crypto": "bg-neon-green/20 text-neon-green",
+  Quantum: "bg-neon-purple/20 text-neon-purple",
+  Biotech: "bg-neon-green/20 text-neon-green",
+  Climate: "bg-neon-cyan/20 text-neon-cyan",
+  Neuro: "bg-neon-purple/20 text-neon-purple",
+  Crypto: "bg-neon-green/20 text-neon-green",
 };
 
 export default function ProjectDetail() {
@@ -39,7 +46,11 @@ export default function ProjectDetail() {
 
   const fundMutation = useMutation<FundingResponse, Error, FundingRequest>({
     mutationFn: async (data) => {
-      const res = await apiRequest("POST", `/api/projects/${projectId}/fund`, data);
+      const res = await apiRequest(
+        "POST",
+        `/api/projects/${projectId}/fund`,
+        data
+      );
       return res.json();
     },
     onSuccess: (data) => {
@@ -82,8 +93,20 @@ export default function ProjectDetail() {
     );
   }
 
-  const timeline: TimelineItem[] = project.timeline ? JSON.parse(project.timeline) : [];
-  const recentActivity: ActivityItem[] = project.recentActivity ? JSON.parse(project.recentActivity) : [];
+  // Helper function to safely parse JSON
+  const safeJsonParse = (value: any) => {
+    if (!value) return [];
+    if (typeof value === "object") return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.error("JSON parse error:", error);
+      return [];
+    }
+  };
+
+  const timeline: TimelineItem[] = safeJsonParse(project.timeline);
+  const recentActivity: ActivityItem[] = safeJsonParse(project.recentActivity);
 
   const handleFunding = () => {
     const amount = parseInt(fundingAmount);
@@ -123,15 +146,22 @@ export default function ProjectDetail() {
               <div className="flex items-center justify-between mb-6">
                 <Badge
                   className={`px-4 py-2 rounded-full text-sm font-mono ${
-                    categoryColors[project.category as keyof typeof categoryColors] ||
-                    "bg-gray-600/20 text-gray-400"
+                    categoryColors[
+                      project.category as keyof typeof categoryColors
+                    ] || "bg-gray-600/20 text-gray-400"
                   }`}
                 >
                   {project.category}
                 </Badge>
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-400">Project ID: #{project.id}</span>
-                  <Button variant="ghost" size="icon" className="neon-cyan hover:bg-white/10">
+                  <span className="text-sm text-gray-400">
+                    Project ID: #{project.id}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="neon-cyan hover:bg-white/10"
+                  >
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -143,7 +173,10 @@ export default function ProjectDetail() {
               {/* Author Info */}
               <div className="flex items-center space-x-4">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={project.authorImage || ""} alt={project.authorName} />
+                  <AvatarImage
+                    src={project.authorImage || ""}
+                    alt={project.authorName}
+                  />
                   <AvatarFallback>
                     {project.authorName
                       .split(" ")
@@ -153,7 +186,9 @@ export default function ProjectDetail() {
                 </Avatar>
                 <div>
                   <h3 className="font-semibold">{project.authorName}</h3>
-                  <p className="text-sm text-gray-400">{project.authorAffiliation}</p>
+                  <p className="text-sm text-gray-400">
+                    {project.authorAffiliation}
+                  </p>
                 </div>
               </div>
             </div>
@@ -172,7 +207,9 @@ export default function ProjectDetail() {
             {/* Technical Approach */}
             {project.technicalApproach && (
               <div className="glass-effect rounded-xl p-8 mb-8">
-                <h2 className="text-2xl font-bold mb-4 neon-cyan">Technical Approach</h2>
+                <h2 className="text-2xl font-bold mb-4 neon-cyan">
+                  Technical Approach
+                </h2>
                 <p className="text-gray-300">{project.technicalApproach}</p>
               </div>
             )}
@@ -180,7 +217,9 @@ export default function ProjectDetail() {
             {/* Timeline */}
             {timeline.length > 0 && (
               <div className="glass-effect rounded-xl p-8">
-                <h2 className="text-2xl font-bold mb-6 neon-cyan">Research Timeline</h2>
+                <h2 className="text-2xl font-bold mb-6 neon-cyan">
+                  Research Timeline
+                </h2>
                 <div className="space-y-4">
                   {timeline.map((item, index) => (
                     <div key={index} className="flex items-center space-x-4">
@@ -197,7 +236,9 @@ export default function ProjectDetail() {
                         <h4 className="font-semibold">
                           {item.phase} ({item.duration})
                         </h4>
-                        <p className="text-sm text-gray-400">{item.description}</p>
+                        <p className="text-sm text-gray-400">
+                          {item.description}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -210,7 +251,9 @@ export default function ProjectDetail() {
           <div className="lg:col-span-1">
             {/* Funding Progress */}
             <div className="glass-effect rounded-xl p-6 mb-6 hologram-border">
-              <h3 className="text-xl font-bold mb-4 neon-cyan">Funding Progress</h3>
+              <h3 className="text-xl font-bold mb-4 neon-cyan">
+                Funding Progress
+              </h3>
 
               <div className="text-center mb-6">
                 <div className="text-3xl font-mono font-bold text-white mb-2">
@@ -235,12 +278,6 @@ export default function ProjectDetail() {
                   </div>
                   <div className="text-xs text-gray-400">Backers</div>
                 </div>
-                <div>
-                  <div className="text-lg font-mono font-bold neon-green">
-                    {project.expectedRoi}%
-                  </div>
-                  <div className="text-xs text-gray-400">Expected ROI</div>
-                </div>
               </div>
 
               {/* Funding Input */}
@@ -257,11 +294,16 @@ export default function ProjectDetail() {
                   disabled={fundMutation.isPending}
                   className="w-full bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50 transition-all duration-300"
                 >
-                  {fundMutation.isPending ? "Processing..." : "Fund This Research"}
+                  {fundMutation.isPending
+                    ? "Processing..."
+                    : "Fund This Research"}
                 </Button>
               </div>
 
-              <Button variant="outline" className="w-full glass-effect hover:bg-white/10">
+              <Button
+                variant="outline"
+                className="w-full glass-effect hover:bg-white/10"
+              >
                 <Heart className="h-4 w-4 mr-2" />
                 Add to Watchlist
               </Button>
@@ -270,7 +312,9 @@ export default function ProjectDetail() {
             {/* Funding Tiers */}
             {fundingTiers.length > 0 && (
               <div className="glass-effect rounded-xl p-6 mb-6">
-                <h3 className="text-lg font-bold mb-4 neon-cyan">Funding Tiers</h3>
+                <h3 className="text-lg font-bold mb-4 neon-cyan">
+                  Funding Tiers
+                </h3>
 
                 <div className="space-y-3">
                   {fundingTiers.map((tier) => (
@@ -280,14 +324,11 @@ export default function ProjectDetail() {
                     >
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-semibold">${tier.amount}</span>
-                        <span className="text-xs neon-cyan">{tier.title}</span>
+                        <span className="text-xs neon-cyan">{tier.name}</span>
                       </div>
-                      <p className="text-xs text-gray-400">{tier.description}</p>
-                      {tier.revenueShare && tier.revenueShare > 0 && (
-                        <p className="text-xs neon-green mt-1">
-                          {tier.revenueShare}% revenue share
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-400">
+                        {tier.description}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -297,7 +338,9 @@ export default function ProjectDetail() {
             {/* Recent Activity */}
             {recentActivity.length > 0 && (
               <div className="glass-effect rounded-xl p-6">
-                <h3 className="text-lg font-bold mb-4 neon-cyan">Recent Activity</h3>
+                <h3 className="text-lg font-bold mb-4 neon-cyan">
+                  Recent Activity
+                </h3>
 
                 <div className="space-y-3">
                   {recentActivity.map((activity, index) => (
@@ -316,9 +359,14 @@ export default function ProjectDetail() {
                           {activity.user || activity.description}
                         </span>
                         {activity.amount && (
-                          <span className="text-gray-400"> funded ${activity.amount}</span>
+                          <span className="text-gray-400">
+                            {" "}
+                            funded ${activity.amount}
+                          </span>
                         )}
-                        <div className="text-xs text-gray-500">{activity.time}</div>
+                        <div className="text-xs text-gray-500">
+                          {activity.time}
+                        </div>
                       </div>
                     </div>
                   ))}

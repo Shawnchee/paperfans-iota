@@ -11,7 +11,6 @@ export interface Project {
   currentFunding: number;
   backerCount: number;
   daysLeft: number;
-  expectedRoi: number;
   technicalApproach?: string;
   timeline?: string;
   recentActivity?: string;

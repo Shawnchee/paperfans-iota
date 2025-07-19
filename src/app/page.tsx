@@ -5,7 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { ProjectCard } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Search, TrendingUp, Users, DollarSign, Plus } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import type { Project } from "@/lib/types";
 
 const categories = [
@@ -32,7 +36,6 @@ const mockProjects: Project[] = [
     currentFunding: 35000,
     backerCount: 1250,
     daysLeft: 15,
-    expectedRoi: 25,
     createdAt: "2024-01-01",
     updatedAt: "2024-01-01",
   },
@@ -48,7 +51,6 @@ const mockProjects: Project[] = [
     currentFunding: 18000,
     backerCount: 890,
     daysLeft: 8,
-    expectedRoi: 18,
     createdAt: "2024-01-01",
     updatedAt: "2024-01-01",
   },
@@ -64,7 +66,6 @@ const mockProjects: Project[] = [
     currentFunding: 52000,
     backerCount: 2100,
     daysLeft: 22,
-    expectedRoi: 30,
     createdAt: "2024-01-01",
     updatedAt: "2024-01-01",
   },
@@ -73,18 +74,29 @@ const mockProjects: Project[] = [
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  // Use mock data for now - in production this would be a real API call
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
+
+  // Fetch projects from the API
   const {
-    data: projects = mockProjects,
+    data: projects = [],
     isLoading,
     error,
   } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
     queryFn: async () => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return mockProjects;
+      const response = await fetch("/api/projects");
+      if (!response.ok) {
+        throw new Error("Failed to fetch projects");
+      }
+      return response.json();
     },
   });
 
@@ -117,13 +129,29 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen pt-20">
-      {/* Background Grid Pattern */}
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+    <div className="min-h-screen pt-20 relative">
+      {/* Animated Background Grid */}
+      <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
+
+      {/* Floating Particles Effect */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-neon-cyan rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-10">
           <img
             src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080"
             alt="Futuristic technology interface"
@@ -132,26 +160,45 @@ export default function Home() {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-7xl font-mono font-bold mb-6">
-            <span className="neon-text neon-cyan">Decentralized</span>
+          <h1 className="text-5xl md:text-7xl font-mono font-bold mb-6 float">
+            <span className="glitch neon-cyan" data-text="Decentralized">
+              Decentralized
+            </span>
             <br />
-            <span className="text-white">Research Funding</span>
+            <span className="glitch text-white" data-text="Research Funding">
+              Research Funding
+            </span>
           </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Democratize scientific research through Web3. Fund breakthrough
-            papers, own future revenue, and accelerate human knowledge.
+          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Democratize scientific research through{" "}
+            <span className="neon-cyan">Web3</span>. Fund breakthrough papers,
+            own future revenue, and accelerate human knowledge.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="px-8 py-4 bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50 transition-all duration-300 animate-glow">
-              Explore Research
+            <Button className="sci-fi-button px-8 py-4 text-white font-semibold">
+              <span className="relative z-10">Explore Research</span>
             </Button>
-            <Button
-              variant="outline"
-              className="px-8 py-4 glass-effect hover:bg-white/10 transition-all duration-300"
-            >
-              Submit Paper
-            </Button>
+            {user ? (
+              <Link href="/create-project">
+                <Button
+                  variant="outline"
+                  className="px-8 py-4 sci-fi-input hover:bg-neon-cyan/10 transition-all duration-300"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Project
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth">
+                <Button
+                  variant="outline"
+                  className="px-8 py-4 sci-fi-input hover:bg-neon-cyan/10 transition-all duration-300"
+                >
+                  Submit Paper
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -160,26 +207,44 @@ export default function Home() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="glass-effect rounded-xl p-6 text-center hologram-border">
-              <DollarSign className="mx-auto mb-2 h-8 w-8 neon-cyan" />
-              <div className="text-3xl font-mono font-bold neon-cyan mb-2">
+            <div
+              className="sci-fi-card rounded-xl p-8 text-center float"
+              style={{ animationDelay: "0s" }}
+            >
+              <div className="relative">
+                <DollarSign className="mx-auto mb-4 h-12 w-12 neon-cyan" />
+                <div className="absolute inset-0 bg-neon-cyan/20 rounded-full blur-xl"></div>
+              </div>
+              <div className="text-4xl font-mono font-bold neon-cyan mb-2">
                 ${(totalFunding / 1000000).toFixed(1)}M
               </div>
-              <div className="text-gray-400">Total Funding</div>
+              <div className="text-gray-400 font-medium">Total Funding</div>
             </div>
-            <div className="glass-effect rounded-xl p-6 text-center hologram-border">
-              <TrendingUp className="mx-auto mb-2 h-8 w-8 neon-purple" />
-              <div className="text-3xl font-mono font-bold neon-purple mb-2">
+            <div
+              className="sci-fi-card rounded-xl p-8 text-center float"
+              style={{ animationDelay: "0.5s" }}
+            >
+              <div className="relative">
+                <TrendingUp className="mx-auto mb-4 h-12 w-12 neon-purple" />
+                <div className="absolute inset-0 bg-neon-purple/20 rounded-full blur-xl"></div>
+              </div>
+              <div className="text-4xl font-mono font-bold neon-purple mb-2">
                 {totalProjects}
               </div>
-              <div className="text-gray-400">Active Projects</div>
+              <div className="text-gray-400 font-medium">Active Projects</div>
             </div>
-            <div className="glass-effect rounded-xl p-6 text-center hologram-border">
-              <Users className="mx-auto mb-2 h-8 w-8 neon-green" />
-              <div className="text-3xl font-mono font-bold neon-green mb-2">
+            <div
+              className="sci-fi-card rounded-xl p-8 text-center float"
+              style={{ animationDelay: "1s" }}
+            >
+              <div className="relative">
+                <Users className="mx-auto mb-4 h-12 w-12 neon-green" />
+                <div className="absolute inset-0 bg-neon-green/20 rounded-full blur-xl"></div>
+              </div>
+              <div className="text-4xl font-mono font-bold neon-green mb-2">
                 {totalResearchers}
               </div>
-              <div className="text-gray-400">Researchers</div>
+              <div className="text-gray-400 font-medium">Researchers</div>
             </div>
           </div>
         </div>
@@ -190,12 +255,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Search Bar */}
           <div className="relative max-w-md mx-auto mb-8">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neon-cyan z-10" />
             <Input
               placeholder="Search research projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 glass-effect border-white/20 focus:border-neon-cyan"
+              className="pl-10 sci-fi-input text-white placeholder-gray-400"
             />
           </div>
 
@@ -209,8 +274,8 @@ export default function Home() {
                 onClick={() => setSelectedCategory(category)}
                 className={
                   selectedCategory === category
-                    ? "bg-neon-cyan/20 text-neon-cyan border-neon-cyan"
-                    : "glass-effect hover:bg-neon-cyan/20 hover:text-neon-cyan hover:border-neon-cyan"
+                    ? "sci-fi-badge text-white border-neon-cyan"
+                    : "sci-fi-input hover:bg-neon-cyan/20 hover:text-neon-cyan hover:border-neon-cyan"
                 }
               >
                 {category}

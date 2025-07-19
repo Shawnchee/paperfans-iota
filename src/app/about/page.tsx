@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function About() {
   return (
@@ -15,10 +16,10 @@ export default function About() {
           <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              We're building the future of decentralized content creation and
-              curation on the IOTA network. Our platform empowers creators and
-              communities to collaborate, share, and monetize their work in a
-              truly decentralized way.
+              We&apos;re building the future of decentralized content creation
+              and curation on the IOTA network. Our platform empowers creators
+              and communities to collaborate, share, and monetize their work in
+              a truly decentralized way.
             </p>
           </section>
 
@@ -34,7 +35,7 @@ export default function About() {
           <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold mb-4">Technology</h2>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              Built on IOTA's feeless and scalable distributed ledger
+              Built on IOTA&apos;s feeless and scalable distributed ledger
               technology, PaperFans provides a seamless experience for content
               creators and consumers alike.
             </p>
@@ -42,23 +43,23 @@ export default function About() {
         </div>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row mt-8">
-          <a
+          <Link
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
             href="/docs"
           >
             Read Documentation
-          </a>
-          <a
+          </Link>
+          <Link
             className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
             href="/"
           >
             Back to Home
-          </a>
+          </Link>
         </div>
       </main>
 
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
+        <Link
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
           href="/"
         >
@@ -70,7 +71,7 @@ export default function About() {
             height={16}
           />
           Back to Home
-        </a>
+        </Link>
       </footer>
     </div>
   );

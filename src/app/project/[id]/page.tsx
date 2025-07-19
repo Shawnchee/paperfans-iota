@@ -49,7 +49,6 @@ const mockProjects: Record<string, Project> = {
     currentFunding: 35000,
     backerCount: 1250,
     daysLeft: 15,
-    expectedRoi: 25,
     technicalApproach:
       "This project leverages IOTA's feeless and scalable distributed ledger technology to create a seamless content monetization platform. We use smart contracts to handle revenue sharing and implement a reputation system for content quality.",
     timeline: JSON.stringify([
@@ -103,7 +102,6 @@ const mockProjects: Record<string, Project> = {
     currentFunding: 18000,
     backerCount: 890,
     daysLeft: 8,
-    expectedRoi: 18,
     technicalApproach:
       "Built on blockchain technology, this governance tool enables transparent voting, proposal management, and resource allocation for decentralized communities.",
     timeline: JSON.stringify([
@@ -151,11 +149,11 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     queryKey: ["/api/projects", projectId],
     queryFn: async () => {
       if (!projectId) throw new Error("No project ID");
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const project = mockProjects[projectId];
-      if (!project) throw new Error("Project not found");
-      return project;
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (!response.ok) {
+        throw new Error("Project not found");
+      }
+      return response.json();
     },
     enabled: !!projectId,
   });
@@ -163,45 +161,34 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const { data: fundingTiers = [] } = useQuery<FundingTier[]>({
     queryKey: ["/api/projects", projectId, "funding-tiers"],
     queryFn: async () => {
-      // Mock funding tiers
-      return [
-        {
-          id: 1,
-          projectId: parseInt(projectId!),
-          name: "Early Supporter",
-          description: "Get early access and exclusive updates",
-          amount: 100,
-          benefits: ["Early access", "Exclusive updates", "Community access"],
-          backerCount: 45,
-        },
-        {
-          id: 2,
-          projectId: parseInt(projectId!),
-          name: "Major Contributor",
-          description: "Significant contribution with premium benefits",
-          amount: 1000,
-          benefits: [
-            "All early supporter benefits",
-            "Direct consultation",
-            "Revenue sharing",
-          ],
-          backerCount: 12,
-        },
-      ];
+      const response = await fetch(`/api/projects/${projectId}/funding-tiers`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
     },
     enabled: !!projectId,
   });
 
   const fundMutation = useMutation<FundingResponse, Error, FundingRequest>({
     mutationFn: async (data) => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return {
-        success: true,
-        transactionId: "tx_" + Math.random().toString(36).substr(2, 9),
-        newFundingAmount: (project?.currentFunding || 0) + data.amount,
-        message: "Funding successful",
-      };
+      const response = await fetch(`/api/projects/${projectId}/fund`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...data,
+          contributorName: "Anonymous User", // In a real app, this would come from user authentication
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Funding failed");
+      }
+
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -219,6 +206,21 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       });
     },
   });
+
+  // Helper function to safely parse JSON
+  const safeJsonParse = (value: any) => {
+    if (!value) return [];
+    if (typeof value === "object") return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.error("JSON parse error:", error);
+      return [];
+    }
+  };
+
+  const timeline: TimelineItem[] = safeJsonParse(project?.timeline);
+  const recentActivity: ActivityItem[] = safeJsonParse(project?.recentActivity);
 
   if (!projectId) {
     return <div>Loading...</div>;
@@ -243,13 +245,6 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     );
   }
 
-  const timeline: TimelineItem[] = project.timeline
-    ? JSON.parse(project.timeline)
-    : [];
-  const recentActivity: ActivityItem[] = project.recentActivity
-    ? JSON.parse(project.recentActivity)
-    : [];
-
   const handleFunding = () => {
     const amount = parseInt(fundingAmount);
     if (!amount || amount <= 0) {
@@ -268,13 +263,16 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   };
 
   return (
-    <div className="min-h-screen pt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen pt-20 relative">
+      {/* Animated Background Grid */}
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Back Button */}
         <Button
           variant="ghost"
           onClick={() => window.history.back()}
-          className="flex items-center space-x-2 neon-cyan hover:bg-white/10 mb-8"
+          className="flex items-center space-x-2 neon-cyan hover:bg-neon-cyan/10 mb-8 sci-fi-input"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Research</span>
@@ -284,7 +282,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Project Header */}
-            <div className="glass-effect rounded-xl p-8 mb-8">
+            <div className="sci-fi-card rounded-xl p-8 mb-8 float">
               <div className="flex items-center justify-between mb-6">
                 <Badge
                   className={`px-4 py-2 rounded-full text-sm font-mono ${
@@ -348,17 +346,19 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
             {/* Technical Approach */}
             {project.technicalApproach && (
-              <div className="glass-effect rounded-xl p-8 mb-8">
+              <div className="sci-fi-card rounded-xl p-8 mb-8">
                 <h2 className="text-2xl font-bold mb-4 neon-cyan">
                   Technical Approach
                 </h2>
-                <p className="text-gray-300">{project.technicalApproach}</p>
+                <p className="text-gray-300 leading-relaxed">
+                  {project.technicalApproach}
+                </p>
               </div>
             )}
 
             {/* Timeline */}
             {timeline.length > 0 && (
-              <div className="glass-effect rounded-xl p-8">
+              <div className="sci-fi-card rounded-xl p-8">
                 <h2 className="text-2xl font-bold mb-6 neon-cyan">
                   Research Timeline
                 </h2>
@@ -392,7 +392,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Funding Progress */}
-            <div className="glass-effect rounded-xl p-6 mb-6 hologram-border">
+            <div className="sci-fi-card rounded-xl p-6 mb-6 float">
               <h3 className="text-xl font-bold mb-4 neon-cyan">
                 Funding Progress
               </h3>
@@ -420,12 +420,6 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                   </div>
                   <div className="text-xs text-gray-400">Backers</div>
                 </div>
-                <div>
-                  <div className="text-lg font-mono font-bold neon-green">
-                    {project.expectedRoi}%
-                  </div>
-                  <div className="text-xs text-gray-400">Expected ROI</div>
-                </div>
               </div>
 
               {/* Funding Input */}
@@ -435,16 +429,18 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                   placeholder="Enter amount ($)"
                   value={fundingAmount}
                   onChange={(e) => setFundingAmount(e.target.value)}
-                  className="glass-effect border-white/20 focus:border-neon-cyan"
+                  className="sci-fi-input text-white placeholder-gray-400"
                 />
                 <Button
                   onClick={handleFunding}
                   disabled={fundMutation.isPending}
-                  className="w-full bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50"
+                  className="w-full sci-fi-button text-white font-semibold"
                 >
-                  {fundMutation.isPending
-                    ? "Processing..."
-                    : "Fund This Project"}
+                  <span className="relative z-10">
+                    {fundMutation.isPending
+                      ? "Processing..."
+                      : "Fund This Project"}
+                  </span>
                 </Button>
               </div>
             </div>

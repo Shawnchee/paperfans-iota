@@ -15,7 +15,8 @@ export default function NotFound() {
           </div>
 
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-300 mb-6">
-            The page you're looking for doesn't exist or has been moved.
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved.
           </p>
 
           <div className="flex gap-4">

@@ -17,17 +17,20 @@ export function FundingProgress({
 
   return (
     <div className={className}>
-      <div className="flex justify-between text-xs text-gray-400 mb-1">
-        <span>
+      <div className="flex justify-between text-xs text-gray-400 mb-2">
+        <span className="font-mono">
           ${currentFunding.toLocaleString()} / ${fundingGoal.toLocaleString()}
         </span>
-        <span>{daysLeft} days left</span>
+        <span className="font-mono text-neon-cyan">{daysLeft} days left</span>
       </div>
-      <div className="w-full bg-gray-700 rounded-full h-2">
+      <div className="sci-fi-progress w-full rounded-full h-3 relative overflow-hidden">
         <div
-          className="funding-progress h-2 rounded-full transition-all duration-300"
+          className="sci-fi-progress-fill h-3 rounded-full transition-all duration-500 relative"
           style={{ width: `${Math.min(percentageFunded, 100)}%` }}
-        />
+        >
+          {/* Animated shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+        </div>
       </div>
     </div>
   );
