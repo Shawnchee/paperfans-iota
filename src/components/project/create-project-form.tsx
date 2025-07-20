@@ -1,4 +1,5 @@
 "use client";
+import { ConnectButton } from "@iota/dapp-kit";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -204,84 +205,60 @@ export function CreateProjectForm() {
     }
 
     setIsLoading(true);
-    setIsDeployingContract(true);
 
     try {
-      // Prepare the proposal data for the smart contract
-      const proposalData: ResearchProposalData = {
+      const authHeaders = getAuthHeaders();
+      if (!authHeaders) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in again",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare payload to match backend API (camelCase for required fields, timeline as array)
+      const payload = {
         title: formData.title,
         abstract: formData.abstract,
         category: formData.category,
-        domain: formData.domain,
-        tags: formData.tags,
-        technicalApproach: formData.technicalApproach,
-        projectImage: formData.imageUrl,
         authorName: formData.authorName,
         authorAffiliation: formData.authorAffiliation,
         authorImage: formData.authorImage,
-        orcidId: formData.orcidId,
+        imageUrl: formData.imageUrl,
         fundingGoal: formData.fundingGoal,
-        campaignDurationDays: formData.daysLeft,
-        researchTeamPercentage: researchTeamPct,
-        revenueModels: formData.returns.revenueModels
+        daysLeft: formData.daysLeft,
+        technicalApproach: formData.technicalApproach,
+        timeline: formData.timeline, // send as array, let backend stringify
       };
 
-      // Create the research proposal using the smart contract
-      const result = await createProposal(proposalData);
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
+        body: JSON.stringify(payload),
+      });
 
-      if (result.success) {
-        toast({
-          title: "Research Proposal Deployed!",
-          description: `Transaction ID: ${result.transactionId}`,
-        });
-
-        // Also save to the database for the web interface
-        const authHeaders = getAuthHeaders();
-        if (authHeaders) {
-          const payload = {
-            title: formData.title,
-            abstract: formData.abstract,
-            category: formData.category,
-            authorName: formData.authorName,
-            authorAffiliation: formData.authorAffiliation,
-            authorImage: formData.authorImage,
-            imageUrl: formData.imageUrl,
-            fundingGoal: formData.fundingGoal,
-            daysLeft: formData.daysLeft,
-            technicalApproach: formData.technicalApproach,
-            timeline: formData.timeline,
-            blockchainTransactionId: result.transactionId,
-            blockchainProposalId: result.proposalId
-          };
-
-          const response = await fetch("/api/projects", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...authHeaders,
-            },
-            body: JSON.stringify(payload),
-          });
-
-          if (response.ok) {
-            const dbResult = await response.json();
-            router.push(`/project/${dbResult.id}`);
-          }
-        }
-      } else {
-        toast({
-          title: "Smart Contract Deployment Failed",
-          description: result.error || "Failed to deploy research proposal to blockchain",
-          variant: "destructive",
-        });
+      if (!response.ok) {
+        throw new Error("Failed to create project");
       }
+
+      const result = await response.json();
+
+      toast({
+        title: "Project Created!",
+        description: "Your research project has been published successfully",
+      });
+
+      router.push(`/project/${result.id}`);
     } catch (error) {
       toast({
         title: "Creation Failed",
-        description: "Failed to create project. Please try again.",
+        description: error.message || "Failed to create project. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
       setIsDeployingContract(false);
     }
@@ -339,6 +316,22 @@ export function CreateProjectForm() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+  {!currentAccount && (
+    <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+      <div className="flex items-center gap-3">
+        <AlertCircle className="h-5 w-5 text-red-400" />
+        <h3 className="text-lg font-medium text-red-300">
+          Wallet Connection Required
+        </h3>
+      </div>
+      <p className="text-gray-300 text-sm mt-2">
+        Connect your IOTA wallet to publish your research project as a token.
+      </p>
+      <div className="mt-3">
+        <ConnectButton />
+      </div>
+    </div>
+  )}
             {/* Basic Information */}
             <div className="space-y-6">
               <h3 className="text-xl font-semibold neon-purple">
@@ -825,16 +818,16 @@ export function CreateProjectForm() {
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading || !isConnected}
+                disabled={isLoading}
                 className="sci-fi-button text-white font-semibold"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isDeployingContract ? "Deploying Smart Contract..." : "Creating Project..."}
+                    Creating Project...
                   </>
                 ) : (
-                  <span className="relative z-10">Deploy Research Proposal</span>
+                  <span className="relative z-10">Publish Project</span>
                 )}
               </Button>
             </div>
