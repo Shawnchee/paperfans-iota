@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
-import { Copy, Download, Share2, X, Loader2 } from "lucide-react";
+import { Copy, Download, Share2, X, Loader2, Twitter, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@/lib/types";
 
@@ -262,6 +262,36 @@ export default function ProjectPage() {
     setTimeout(() => setCopied(false), 1200);
   };
 
+  // Social sharing functions
+  const handleShareX = () => {
+    if (!project) return;
+    const text = `Check out this amazing research project: ${project.title} on PaperFans! 🚀`;
+    const url = project.community?.shareUrl || window.location.href;
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(shareUrl, '_blank');
+  };
+
+  const handleShareTelegram = () => {
+    if (!project) return;
+    const text = `Check out this amazing research project: ${project.title} on PaperFans! 🚀`;
+    const url = project.community?.shareUrl || window.location.href;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, '_blank');
+  };
+
+  const handleShareDiscord = () => {
+    if (!project) return;
+    const text = `Check out this amazing research project: ${project.title} on PaperFans! 🚀`;
+    const url = project.community?.shareUrl || window.location.href;
+    const shareUrl = `https://discord.com/api/oauth2/authorize?client_id=YOUR_DISCORD_CLIENT_ID&permissions=2048&scope=bot&response_type=code&redirect_uri=${encodeURIComponent(url)}`;
+    // For now, just copy the URL to clipboard since Discord sharing is more complex
+    navigator.clipboard.writeText(`${text}\n${url}`);
+    toast({
+      title: "Discord Share",
+      description: "Project link copied! You can paste it in your Discord server.",
+    });
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -299,7 +329,41 @@ export default function ProjectPage() {
             <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
             <p className="text-gray-400 max-w-2xl">{project.abstract}</p>
           </div>
-          <Button className="sci-fi-button px-6 py-2 text-lg font-semibold shadow-neon-cyan" onClick={() => setFundModalOpen(true)}>Fund This Project</Button>
+          <div className="flex items-center gap-3">
+            {/* Social Sharing Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleShareX}
+                variant="outline"
+                size="sm"
+                className="sci-fi-input hover:bg-blue-500/20 hover:border-blue-500/50 transition-colors"
+                title="Share on X (Twitter)"
+              >
+                <Twitter className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleShareTelegram}
+                variant="outline"
+                size="sm"
+                className="sci-fi-input hover:bg-blue-500/20 hover:border-blue-500/50 transition-colors"
+                title="Share on Telegram"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleShareDiscord}
+                variant="outline"
+                size="sm"
+                className="sci-fi-input hover:bg-purple-500/20 hover:border-purple-500/50 transition-colors"
+                title="Share on Discord"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                </svg>
+              </Button>
+            </div>
+            <Button className="sci-fi-button px-6 py-2 text-lg font-semibold shadow-neon-cyan" onClick={() => setFundModalOpen(true)}>Fund This Project</Button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -589,8 +653,44 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Social Boost Tools:</span>
                   <div className="flex gap-2 mt-2">
-                    <Button variant="outline" size="icon"><Share2 className="w-4 h-4" /></Button>
-                    <Button variant="outline" size="icon"><span className="font-bold">in</span></Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={handleShareX}
+                      title="Share on X (Twitter)"
+                      className="hover:bg-blue-500/20 hover:border-blue-500/50"
+                    >
+                      <Twitter className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={handleShareTelegram}
+                      title="Share on Telegram"
+                      className="hover:bg-blue-500/20 hover:border-blue-500/50"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={handleShareDiscord}
+                      title="Share on Discord"
+                      className="hover:bg-purple-500/20 hover:border-purple-500/50"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                      </svg>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={handleCopy}
+                      title="Copy Link"
+                      className="hover:bg-green-500/20 hover:border-green-500/50"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import { User } from '@/lib/types';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // Temporarily using anon key - should use SUPABASE_SERVICE_ROLE_KEY in production
 );
 
 // POST /api/users/auto-create - Auto-create user profile after signup

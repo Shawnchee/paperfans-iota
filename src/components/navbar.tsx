@@ -25,6 +25,7 @@ export function Navbar() {
 
   const navItems = [
     { href: "/", label: "Research" },
+    { href: "/dao", label: "DAO Governance" },
     { href: "/about", label: "About" },
     { href: "/docs", label: "Documentation" },
     { href: "/onramp", label: "Onramping & Wallet" },

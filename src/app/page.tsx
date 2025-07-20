@@ -54,7 +54,7 @@ export default function Home() {
   });
 
   const totalFunding = projects.reduce(
-    (sum, project) => sum + project.currentFunding,
+    (sum, project) => sum + project.currentFunding * 51000,
     0
   );
   const totalProjects = projects.length;
