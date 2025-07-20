@@ -1729,161 +1729,169 @@ export default function ProjectPage() {
         </div>
       )}
 
-      {/* Milestone Vote Modal */}
-      {milestoneVoteModalOpen && selectedMilestone && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10, 20, 40, 0.95)' }}>
-          <div className="rounded-xl p-8 shadow-2xl border border-yellow-500/40 min-w-[500px] flex flex-col bg-gradient-to-br from-[#0a1a28] via-[#1a2233] to-[#0a1a28] backdrop-blur-xl relative">
-            <button className="absolute top-3 right-3 text-gray-400 hover:text-yellow-400" onClick={() => setMilestoneVoteModalOpen(false)}><X className="w-5 h-5" /></button>
-            <div className="flex items-center space-x-3 mb-6">
-              <Vote className="w-8 h-8 text-yellow-400" />
-              <h2 className="text-xl font-bold text-yellow-400">Vote on Milestone Funding</h2>
+{/* Milestone Vote Modal */}
+{milestoneVoteModalOpen && selectedMilestone && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8" style={{ background: 'rgba(10, 20, 40, 0.95)' }}>
+    <div className="rounded-xl shadow-2xl border border-yellow-500/40 max-w-[500px] w-full max-h-[90vh] flex flex-col bg-gradient-to-br from-[#0a1a28] via-[#1a2233] to-[#0a1a28] backdrop-blur-xl relative">
+      <div className="sticky top-0 z-10 px-8 py-6 bg-gradient-to-b from-[#0a1a28] to-[#0a1a28]/90 backdrop-blur-sm rounded-t-xl">
+        <button className="absolute top-3 right-3 text-gray-400 hover:text-yellow-400" onClick={() => setMilestoneVoteModalOpen(false)}>
+          <X className="w-5 h-5" />
+        </button>
+        <div className="flex items-center space-x-3">
+          <Vote className="w-8 h-8 text-yellow-400" />
+          <h2 className="text-xl font-bold text-yellow-400">Vote on Milestone Funding</h2>
+        </div>
+      </div>
+      
+      <div className="overflow-y-auto custom-scrollbar px-8 pb-8 pt-8">
+        <div className="space-y-6">
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+            <div className="font-semibold text-white mb-2">{selectedMilestone.name}</div>
+            <div className="text-sm text-gray-300 mb-2">{selectedMilestone.description}</div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">Budget:</span>
+              <span className="text-yellow-400 font-semibold">${selectedMilestone.budget.toLocaleString()}</span>
             </div>
-            
-            <div className="space-y-6">
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <div className="font-semibold text-white mb-2">{selectedMilestone.name}</div>
-                <div className="text-sm text-gray-300 mb-2">{selectedMilestone.description}</div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Budget:</span>
-                  <span className="text-yellow-400 font-semibold">${selectedMilestone.budget.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Progress:</span>
-                  <span className="text-cyan-400">{selectedMilestone.progress}%</span>
-                </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">Progress:</span>
+              <span className="text-cyan-400">{selectedMilestone.progress}%</span>
+            </div>
+          </div>
+          
+          <div>
+            <div className="text-sm font-semibold text-gray-300 mb-3">Evidence Submitted:</div>
+            <div className="space-y-2">
+              {selectedMilestone.evidence.length > 0 ? (
+                selectedMilestone.evidence.map((evidence: any, idx: number) => (
+                  <Card key={idx} className="p-3 bg-black/30 border border-white/10">
+                    <a 
+                      href={evidence.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="text-sm">{evidence.name}</span>
+                      <Badge className="text-xs bg-gray-600/20 text-gray-400">{evidence.type}</Badge>
+                    </a>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 italic">No evidence uploaded yet</div>
+              )}
+            </div>
+          </div>
+          
+          {/* Vote Summary */}
+          <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+            <div className="text-sm font-semibold text-gray-300 mb-3">Current Vote Status</div>
+            <div className="grid grid-cols-3 gap-4 mb-3">
+              <div className="text-center">
+                <div className="text-lg font-bold text-white">{mockVoteData.totalVotes}</div>
+                <div className="text-xs text-gray-400">Total Votes</div>
               </div>
-              
-              <div>
-                <div className="text-sm font-semibold text-gray-300 mb-3">Evidence Submitted:</div>
-                <div className="space-y-2">
-                  {selectedMilestone.evidence.length > 0 ? (
-                    selectedMilestone.evidence.map((evidence: any, idx: number) => (
-                      <Card key={idx} className="p-3 bg-black/30 border border-white/10">
-                        <a 
-                          href={evidence.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span className="text-sm">{evidence.name}</span>
-                          <Badge className="text-xs bg-gray-600/20 text-gray-400">{evidence.type}</Badge>
-                        </a>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-500 italic">No evidence uploaded yet</div>
-                  )}
-                </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-400">{mockVoteData.allowVotes}</div>
+                <div className="text-xs text-gray-400">Allow</div>
               </div>
-              
-              {/* Vote Summary */}
-              <div className="bg-black/30 border border-white/10 rounded-lg p-4">
-                <div className="text-sm font-semibold text-gray-300 mb-3">Current Vote Status</div>
-                <div className="grid grid-cols-3 gap-4 mb-3">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-white">{mockVoteData.totalVotes}</div>
-                    <div className="text-xs text-gray-400">Total Votes</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-green-400">{mockVoteData.allowVotes}</div>
-                    <div className="text-xs text-gray-400">Allow</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-red-400">{mockVoteData.rejectVotes}</div>
-                    <div className="text-xs text-gray-400">Reject</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Allow Progress:</span>
-                    <span className="text-green-400">{Math.round((mockVoteData.allowVotes / mockVoteData.totalVotes) * 100)}%</span>
-                  </div>
-                  <Progress 
-                    value={(mockVoteData.allowVotes / mockVoteData.totalVotes) * 100} 
-                    className="h-2 bg-red-500/20"
-                  />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Time Remaining:</span>
-                    <span className="text-yellow-400 font-mono">{mockVoteData.timeRemaining}</span>
-                  </div>
-                </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-red-400">{mockVoteData.rejectVotes}</div>
+                <div className="text-xs text-gray-400">Reject</div>
               </div>
-              
-              <div>
-                <div className="text-sm font-semibold text-gray-300 mb-3">Your Vote:</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    className={`h-12 ${userVote === "approve" 
-                      ? "bg-green-500/20 text-green-400 border-green-500/30" 
-                      : "bg-black/40 text-gray-300 border-white/10 hover:bg-green-500/10"}`}
-                    onClick={() => setUserVote("approve")}
-                  >
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Allow Funding
-                  </Button>
-                  <Button 
-                    className={`h-12 ${userVote === "reject" 
-                      ? "bg-red-500/20 text-red-400 border-red-500/30" 
-                      : "bg-black/40 text-gray-300 border-white/10 hover:bg-red-500/10"}`}
-                    onClick={() => setUserVote("reject")}
-                  >
-                    <X className="w-5 h-5 mr-2" />
-                    Reject Funding
-                  </Button>
-                </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Allow Progress:</span>
+                <span className="text-green-400">{Math.round((mockVoteData.allowVotes / mockVoteData.totalVotes) * 100)}%</span>
               </div>
-              
-              <div className="bg-black/30 border border-white/10 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-2">
-                  <strong>Voting Guidelines:</strong>
-                </div>
-                <div className="text-xs text-gray-400 space-y-1">
-                  • <strong>Allow</strong> if evidence shows milestone completion<br/>
-                  • <strong>Reject</strong> if evidence is insufficient or unclear<br/>
-                  • Majority vote determines funding release<br/>
-                  • Voting period: 48 hours<br/>
-                  • Rejected milestones require additional evidence
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <Button 
-                  className={`flex-1 ${
-                    userVote === "approve" 
-                      ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30" 
-                      : userVote === "reject"
-                      ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
-                      : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
-                  }`}
-                  onClick={() => {
-                    // Mock: Submit vote
-                    setMilestoneVoteModalOpen(false);
-                    setUserVote(null);
-                    setSelectedMilestone(null);
-                  }}
-                  disabled={!userVote}
-                >
-                  <Vote className="w-4 h-4 mr-2" />
-                  {userVote === "approve" ? "Submit Allow Vote" : 
-                   userVote === "reject" ? "Submit Reject Vote" : 
-                   "Submit Vote"}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setMilestoneVoteModalOpen(false);
-                    setUserVote(null);
-                    setSelectedMilestone(null);
-                  }}
-                >
-                  Cancel
-                </Button>
+              <Progress 
+                value={(mockVoteData.allowVotes / mockVoteData.totalVotes) * 100} 
+                className="h-2 bg-red-500/20"
+              />
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Time Remaining:</span>
+                <span className="text-yellow-400 font-mono">{mockVoteData.timeRemaining}</span>
               </div>
             </div>
           </div>
+          
+          <div>
+            <div className="text-sm font-semibold text-gray-300 mb-3">Your Vote:</div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                className={`h-12 ${userVote === "approve" 
+                  ? "bg-green-500/20 text-green-400 border-green-500/30" 
+                  : "bg-black/40 text-gray-300 border-white/10 hover:bg-green-500/10"}`}
+                onClick={() => setUserVote("approve")}
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Allow Funding
+              </Button>
+              <Button 
+                className={`h-12 ${userVote === "reject" 
+                  ? "bg-red-500/20 text-red-400 border-red-500/30" 
+                  : "bg-black/40 text-gray-300 border-white/10 hover:bg-red-500/10"}`}
+                onClick={() => setUserVote("reject")}
+              >
+                <X className="w-5 h-5 mr-2" />
+                Reject Funding
+              </Button>
+            </div>
+          </div>
+          
+          <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+            <div className="text-sm text-gray-300 mb-2">
+              <strong>Voting Guidelines:</strong>
+            </div>
+            <div className="text-xs text-gray-400 space-y-1">
+              • <strong>Allow</strong> if evidence shows milestone completion<br/>
+              • <strong>Reject</strong> if evidence is insufficient or unclear<br/>
+              • Majority vote determines funding release<br/>
+              • Voting period: 48 hours<br/>
+              • Rejected milestones require additional evidence
+            </div>
+          </div>
+          
+          <div className="sticky bottom-0 bg-gradient-to-t from-[#0a1a28] to-[#0a1a28]/90 pt-4 pb-2">
+            <div className="flex space-x-3">
+              <Button 
+                className={`flex-1 ${
+                  userVote === "approve" 
+                    ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30" 
+                    : userVote === "reject"
+                    ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
+                    : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+                }`}
+                onClick={() => {
+                  // Mock: Submit vote
+                  setMilestoneVoteModalOpen(false);
+                  setUserVote(null);
+                  setSelectedMilestone(null);
+                }}
+                disabled={!userVote}
+              >
+                <Vote className="w-4 h-4 mr-2" />
+                {userVote === "approve" ? "Submit Allow Vote" : 
+                userVote === "reject" ? "Submit Reject Vote" : 
+                "Submit Vote"}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setMilestoneVoteModalOpen(false);
+                  setUserVote(null);
+                  setSelectedMilestone(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
