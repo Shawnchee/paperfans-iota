@@ -43,7 +43,7 @@ Before running this project, make sure you have:
 
 1. **Clone the frontend repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Shawnchee/paperfans-iota.git
    cd paperfans-iota
    ```
 
