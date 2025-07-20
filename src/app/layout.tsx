@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   title: "PaperFans IOTA - Decentralized Research Funding",
   description:
     "Democratize scientific research through Web3. Fund breakthrough papers, own future revenue, and accelerate human knowledge.",
+  icons: {
+    icon: "/logoPF.svg",
+  }
 };
+
 
 export default function RootLayout({
   children,

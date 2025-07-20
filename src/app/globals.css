@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+nextjs-portal {
+  display: none;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -45,6 +49,7 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  
 }
 
 /* Sci-fi Background Pattern */
