@@ -191,71 +191,128 @@ function InteractiveTimeline({ timeline }: { timeline: any[] }) {
   const [hoveredPhase, setHoveredPhase] = useState<number | null>(null);
 
   return (
-    <div className="relative">
-      <div className="flex items-center justify-between mb-4">
-        {timeline.map((step, idx) => (
-          <div
-            key={idx}
-            className="flex flex-col items-center relative group cursor-pointer"
-            onMouseEnter={() => setHoveredPhase(idx)}
-            onMouseLeave={() => setHoveredPhase(null)}
-          >
-            {/* Connection Line */}
-            {idx < timeline.length - 1 && (
-              <div className="absolute top-4 left-1/2 w-full h-0.5 bg-gray-600 transform -translate-y-1/2 z-0" />
-            )}
-            
-            {/* Phase Circle */}
-            <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-              step.status === "completed" 
-                ? "bg-green-500 shadow-lg shadow-green-500/50" 
-                : step.status === "active" 
-                ? "bg-cyan-500 shadow-lg shadow-cyan-500/50 animate-pulse" 
-                : "bg-gray-500"
-            } ${hoveredPhase === idx ? "scale-125" : ""}`}>
-              {step.status === "completed" && <CheckCircle className="w-5 h-5 text-white" />}
-              {step.status === "active" && <Clock className="w-5 h-5 text-white" />}
-              {step.status === "pending" && <span className="text-xs text-white">{idx + 1}</span>}
-            </div>
-            
-            {/* Phase Info */}
-            <div className="mt-2 text-center">
-              <div className="text-sm font-semibold text-white">{step.phase}</div>
-              <div className="text-xs text-gray-400">{step.duration}</div>
-              {step.status === "active" && (
-                <div className="mt-1">
-                  <div className="w-16 h-1 bg-gray-600 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-cyan-500 transition-all duration-1000 ease-out"
-                      style={{ width: `${step.progress}%` }}
-                    />
+    <Card className="p-6 bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700/50">
+      <div className="relative">
+        {/* Timeline Container */}
+        <div className="flex items-start justify-between relative">
+          {/* Background Connection Line */}
+          <div className="absolute top-6 left-0 right-0 h-0.5 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 z-0" />
+
+          {timeline.map((step, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col items-center relative group cursor-pointer flex-1"
+              onMouseEnter={() => setHoveredPhase(idx)}
+              onMouseLeave={() => setHoveredPhase(null)}
+            >
+              {/* Phase Circle */}
+              <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
+                step.status === "completed"
+                  ? "bg-green-500 border-green-400 shadow-lg shadow-green-500/30"
+                  : step.status === "active"
+                  ? "bg-cyan-500 border-cyan-400 shadow-lg shadow-cyan-500/30"
+                  : "bg-gray-600 border-gray-500"
+              } ${hoveredPhase === idx ? "scale-110 shadow-xl" : ""}`}>
+                {step.status === "completed" && <CheckCircle className="w-6 h-6 text-white" />}
+                {step.status === "active" && <Clock className="w-6 h-6 text-white animate-pulse" />}
+                {step.status === "pending" && <span className="text-sm font-bold text-white">{idx + 1}</span>}
+              </div>
+
+              {/* Phase Info */}
+              <div className="mt-4 text-center max-w-32">
+                <div className="text-sm font-semibold text-white mb-1">{step.phase}</div>
+                <div className="text-xs text-gray-400 mb-2">{step.duration}</div>
+
+                {/* Progress Bar for Active Phase */}
+                {step.status === "active" && (
+                  <div className="mt-2">
+                    <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden mx-auto">
+                      <div
+                        className="h-full bg-gradient-to-r from-cyan-400 to-cyan-500 transition-all duration-1000 ease-out rounded-full"
+                        style={{ width: `${step.progress}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-cyan-400 mt-1 font-medium">{step.progress}%</div>
                   </div>
-                  <div className="text-xs text-cyan-400 mt-1">{step.progress}%</div>
+                )}
+
+                {/* Status Badge */}
+                <Badge className={`mt-2 text-xs ${
+                  step.status === "completed"
+                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                    : step.status === "active"
+                    ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+                    : "bg-gray-500/20 text-gray-400 border-gray-500/30"
+                }`}>
+                  {step.status === "completed" ? "✓ Complete" :
+                   step.status === "active" ? "⏳ In Progress" :
+                   "⏸ Pending"}
+                </Badge>
+              </div>
+
+              {/* Hover Tooltip */}
+              {hoveredPhase === idx && (
+                <div className="absolute top-full mt-6 left-1/2 transform -translate-x-1/2 bg-black/95 border border-gray-600 rounded-lg p-4 min-w-64 z-30 shadow-xl">
+                  <div className="text-sm font-semibold text-white mb-2">{step.phase}</div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Duration:</span>
+                      <span className="text-white">{step.duration}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Start Date:</span>
+                      <span className="text-white">{new Date(step.startDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">End Date:</span>
+                      <span className="text-white">{new Date(step.endDate).toLocaleDateString()}</span>
+                    </div>
+                    {step.status === "active" && (
+                      <div className="flex justify-between border-t border-gray-600 pt-2 mt-2">
+                        <span className="text-gray-400">Progress:</span>
+                        <span className="text-cyan-400 font-medium">{step.progress}%</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Tooltip Arrow */}
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-black/95 border-l border-t border-gray-600 rotate-45" />
                 </div>
               )}
             </div>
-            
-            {/* Hover Tooltip */}
-            {hoveredPhase === idx && (
-              <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-black/90 border border-cyan-500/50 rounded-lg p-3 z-20 min-w-[200px]">
-                <div className="text-sm font-semibold text-cyan-400">{step.phase}</div>
-                <div className="text-xs text-gray-300 mt-1">
-                  {step.startDate} - {step.endDate}
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Status: {step.status}
-                </div>
-                {step.status === "active" && (
-                  <div className="text-xs text-cyan-400 mt-1">
-                    Progress: {step.progress}%
-                  </div>
-                )}
+          ))}
+        </div>
+
+        {/* Timeline Summary */}
+        <div className="mt-8 pt-6 border-t border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-black/30 rounded-lg border border-gray-700">
+              <div className="text-lg font-bold text-green-400">
+                {timeline.filter(t => t.status === "completed").length}
               </div>
-            )}
+              <div className="text-xs text-gray-400">Completed</div>
+            </div>
+            <div className="text-center p-3 bg-black/30 rounded-lg border border-gray-700">
+              <div className="text-lg font-bold text-cyan-400">
+                {timeline.filter(t => t.status === "active").length}
+              </div>
+              <div className="text-xs text-gray-400">Active</div>
+            </div>
+            <div className="text-center p-3 bg-black/30 rounded-lg border border-gray-700">
+              <div className="text-lg font-bold text-gray-400">
+                {timeline.filter(t => t.status === "pending").length}
+              </div>
+              <div className="text-xs text-gray-400">Pending</div>
+            </div>
+            <div className="text-center p-3 bg-black/30 rounded-lg border border-gray-700">
+              <div className="text-lg font-bold text-white">
+                {Math.round(timeline.reduce((sum, t) => sum + (t.progress || 0), 0) / timeline.length)}%
+              </div>
+              <div className="text-xs text-gray-400">Overall Progress</div>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -557,9 +614,11 @@ export default function ProjectPage() {
 
   // Copy to clipboard
   const handleCopy = () => {
-    navigator.clipboard.writeText(mockProject.community.shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(mockProject.community.shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    }
   };
 
   const tokenPrice = mockProject.funding.tokenPrice;
@@ -639,42 +698,183 @@ export default function ProjectPage() {
 
           {tab === "proposal" && (
             <SectionCard title="Proposal">
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-8">
-                  <div className="flex-1 space-y-4">
-                    <div>
-                      <span className="font-semibold">Proposal Document:</span>
-                      <a
-                        href={mockProject.proposal.docUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 text-neon-cyan underline flex items-center gap-1 hover:text-cyan-300 transition-colors"
-                      >
-                        <Download className="w-4 h-4 inline" /> Download PDF
-                      </a>
+              <div className="space-y-8">
+                {/* Proposal Overview Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Proposal Document Card */}
+                  <Card className="p-6 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border-cyan-500/30">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Download className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">Proposal Document</div>
+                        <div className="text-xs text-gray-400">Research Proposal PDF</div>
+                      </div>
+                    </div>
+                    <a
+                      href={mockProject.proposal.docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-lg py-3 px-4 hover:bg-cyan-500/30 transition-all duration-300"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download PDF
+                    </a>
+                  </Card>
+
+                  {/* Budget Overview Card */}
+                  <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <Target className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">Total Budget</div>
+                        <div className="text-xs text-gray-400">Project Funding Required</div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-green-400">
+                        ${mockProject.proposal.budget.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-400 mt-1">{mockProject.proposal.currency}</div>
+                    </div>
+                  </Card>
+
+                  {/* Milestone Budget Breakdown Card */}
+                  <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/30">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        <Award className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">Milestone Budget</div>
+                        <div className="text-xs text-gray-400">Total Allocated</div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-purple-400">
+                        ${mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-400 mt-1">
+                        {mockProject.proposal.milestones.length} Milestones
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Goal Summary Section */}
+                <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/30">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <Target className="w-5 h-5 text-blue-400" />
                     </div>
                     <div>
-                      <span className="font-semibold">Budget:</span> ${mockProject.proposal.budget.toLocaleString()} {mockProject.proposal.currency}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Goal Summary:</span>
-                      <p className="text-gray-300 mt-1">{mockProject.proposal.goalSummary}</p>
+                      <div className="font-semibold text-white text-lg">Project Goal Summary</div>
+                      <div className="text-xs text-gray-400">Research Objectives & Expected Outcomes</div>
                     </div>
                   </div>
-                </div>
-                
+                  <p className="text-gray-300 leading-relaxed">{mockProject.proposal.goalSummary}</p>
+                </Card>
+
+                {/* Budget Verification Section */}
+                <Card className="p-6 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white text-lg">Budget Verification</div>
+                        <div className="text-xs text-gray-400">Milestone vs Total Budget Comparison</div>
+                      </div>
+                    </div>
+                    <Badge className={
+                      mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0) === mockProject.proposal.budget
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-red-500/20 text-red-400"
+                    }>
+                      {mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0) === mockProject.proposal.budget
+                        ? "✓ Verified"
+                        : "⚠ Mismatch"
+                      }
+                    </Badge>
+                  </div>
+                  <div className="flex items-stretch justify-between gap-4">
+                    <div className="flex-1 text-center p-6 bg-black/30 rounded-lg border border-white/10">
+                      <div className="text-3xl font-bold text-white mb-2">
+                        ${mockProject.proposal.budget.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-400">Total Budget</div>
+                    </div>
+                    <div className="flex-1 text-center p-6 bg-black/30 rounded-lg border border-white/10">
+                      <div className="text-3xl font-bold text-white mb-2">
+                        ${mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-400">Milestone Sum</div>
+                    </div>
+                    <div className="flex-1 text-center p-6 bg-black/30 rounded-lg border border-white/10">
+                      <div className={`text-3xl font-bold mb-2 ${
+                        mockProject.proposal.budget - mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0) === 0
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}>
+                        ${Math.abs(mockProject.proposal.budget - mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0)).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-400">Difference</div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Project Timeline Section */}
                 <div>
-                  <span className="font-semibold mb-4 block">Project Timeline:</span>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-lg text-white">Project Timeline</span>
+                        <div className="text-xs text-gray-400">Research Phase Breakdown</div>
+                      </div>
+                    </div>
+                    <Badge className="bg-cyan-500/20 text-cyan-400">
+                      {mockProject.proposal.timeline.length} Phases
+                    </Badge>
+                  </div>
                   <InteractiveTimeline timeline={mockProject.proposal.timeline} />
                 </div>
-                
+
+                {/* Milestone Breakdown Section */}
                 <div>
-                  <span className="font-semibold mb-4 block">Milestone Breakdown:</span>
-                  <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        <Award className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-lg text-white">Milestone Breakdown</span>
+                        <div className="text-xs text-gray-400">Detailed Project Deliverables</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge className="bg-green-500/20 text-green-400">
+                        {mockProject.proposal.milestones.filter(m => m.status === "completed").length} Completed
+                      </Badge>
+                      <Badge className="bg-cyan-500/20 text-cyan-400">
+                        {mockProject.proposal.milestones.filter(m => m.status === "active").length} Active
+                      </Badge>
+                      <Badge className="bg-gray-500/20 text-gray-400">
+                        {mockProject.proposal.milestones.filter(m => m.status === "pending").length} Pending
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
                     {mockProject.proposal.milestones.map((milestone, index) => (
-                      <EnhancedMilestoneCard 
-                        key={index} 
-                        milestone={milestone} 
+                      <EnhancedMilestoneCard
+                        key={index}
+                        milestone={milestone}
                         index={index}
                         onVoteClick={(milestone) => {
                           setSelectedMilestone(milestone);
@@ -828,144 +1028,191 @@ export default function ProjectPage() {
 
           {tab === "progress" && (
             <SectionCard title="Progress Tracker">
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border-cyan-500/30">
-                    <div className="flex items-center space-x-3">
-                      <Target className="w-8 h-8 text-cyan-400" />
-                      <div>
-                        <div className="text-lg font-bold text-white">{mockProject.progress.currentMilestone}</div>
+              <div className="space-y-8">
+                {/* Progress Overview Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="p-6 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border-cyan-500/30 hover:border-cyan-500/50 transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Target className="w-6 h-6 text-cyan-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-lg font-bold text-white truncate">{mockProject.progress.currentMilestone}</div>
                         <div className="text-sm text-gray-400">Current Milestone</div>
                       </div>
                     </div>
                   </Card>
-                  
-                  <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30">
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="w-8 h-8 text-green-400" />
-                      <div>
-                        <div className="text-lg font-bold text-white">{mockProject.progress.lastUpdated}</div>
+
+                  <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30 hover:border-green-500/50 transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-lg font-bold text-white">{mockProject.progress.lastUpdated.split(' ')[0]}</div>
                         <div className="text-sm text-gray-400">Last Updated</div>
                       </div>
                     </div>
                   </Card>
-                  
-                  <Card className="p-4 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/30">
-                    <div className="flex items-center space-x-3">
-                      <Vote className="w-8 h-8 text-yellow-400" />
-                      <div>
+
+                  <Card className="p-6 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/30 hover:border-yellow-500/50 transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                        <Vote className="w-6 h-6 text-yellow-400" />
+                      </div>
+                      <div className="flex-1">
                         <div className="text-lg font-bold text-white">1</div>
                         <div className="text-sm text-gray-400">Pending Votes</div>
                       </div>
                     </div>
                   </Card>
                 </div>
-                
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-semibold text-lg">Milestone-Based Funding</span>
-                    <div className="text-sm text-gray-400">
-                      Total Budget: ${mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+
+                {/* Milestone-Based Funding Section */}
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Milestone-Based Funding</h3>
+                      <p className="text-sm text-gray-400 mt-1">Track progress and funding release for each project milestone</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-sm text-gray-400">Total Budget:</div>
+                      <div className="text-lg font-bold text-cyan-400">
+                        ${mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Milestone Timeline Overview */}
-                  <div className="mb-6">
-                    <div className="text-sm font-semibold text-gray-300 mb-3">Project Timeline & Budget Allocation</div>
-                    <div className="space-y-4">
+
+                  {/* Milestone Timeline */}
+                  <div className="relative">
+                    <div className="space-y-6">
                       {mockProject.proposal.milestones.map((milestone, index) => (
                         <div key={index} className="relative">
                           {/* Connection Line */}
                           {index < mockProject.proposal.milestones.length - 1 && (
-                            <div className="absolute left-6 top-12 w-0.5 h-8 bg-gray-600 z-0" />
+                            <div className="absolute left-8 top-20 w-0.5 h-12 bg-gradient-to-b from-gray-600 to-gray-700 z-0" />
                           )}
-                          
-                          <div className="flex items-start space-x-4 relative z-10">
-                            {/* Milestone Number & Status */}
-                            <div className="flex flex-col items-center">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
-                                milestone.status === "completed" 
-                                  ? "bg-green-500 border-green-500 text-white" 
-                                  : milestone.status === "active" 
-                                  ? "bg-cyan-500 border-cyan-500 text-white animate-pulse" 
-                                  : "bg-gray-500 border-gray-500 text-white"
+
+                          <div className="flex items-start space-x-6 relative z-10">
+                            {/* Milestone Status Circle */}
+                            <div className="flex flex-col items-center flex-shrink-0">
+                              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-3 shadow-lg transition-all duration-300 ${
+                                milestone.status === "completed"
+                                  ? "bg-green-500 border-green-400 shadow-green-500/30"
+                                  : milestone.status === "active"
+                                  ? "bg-cyan-500 border-cyan-400 shadow-cyan-500/30 animate-pulse"
+                                  : "bg-gray-600 border-gray-500 shadow-gray-600/20"
                               }`}>
-                                {milestone.status === "completed" && <CheckCircle className="w-6 h-6" />}
-                                {milestone.status === "active" && <Clock className="w-6 h-6" />}
-                                {milestone.status === "pending" && <span className="text-sm font-bold">{index + 1}</span>}
+                                {milestone.status === "completed" && <CheckCircle className="w-8 h-8 text-white" />}
+                                {milestone.status === "active" && <Clock className="w-8 h-8 text-white" />}
+                                {milestone.status === "pending" && <span className="text-lg font-bold text-white">{index + 1}</span>}
                               </div>
-                              <div className="text-xs text-gray-400 mt-1">Phase {index + 1}</div>
+                              <div className="text-xs text-gray-400 mt-2 font-medium">Phase {index + 1}</div>
                             </div>
-                            
-                            {/* Milestone Content */}
-                            <div className="flex-1 bg-black/30 border border-white/10 rounded-lg p-4 hover:border-cyan-500/30 transition-colors">
-                              <div className="flex justify-between items-start mb-2">
+
+                            {/* Milestone Content Card */}
+                            <div className="flex-1 bg-gradient-to-br from-black/40 to-black/20 border border-white/10 rounded-xl p-6 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300">
+                              {/* Header Section */}
+                              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
                                 <div className="flex-1">
-                                  <div className="font-semibold text-white text-lg">{milestone.name}</div>
-                                  <div className="text-sm text-gray-400 mt-1">{milestone.description}</div>
+                                  <h4 className="text-xl font-bold text-white mb-2">{milestone.name}</h4>
+                                  <p className="text-sm text-gray-400 leading-relaxed">{milestone.description}</p>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-cyan-400">${milestone.budget.toLocaleString()}</div>
-                                  <div className="text-xs text-gray-400">Budget</div>
+                                <div className="text-right lg:text-right">
+                                  <div className="text-2xl font-bold text-cyan-400">${milestone.budget.toLocaleString()}</div>
+                                  <div className="text-xs text-gray-400 uppercase tracking-wide">Budget</div>
                                 </div>
                               </div>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-                                <div>
-                                  <div className="text-xs text-gray-400">Status</div>
-                                  <Badge className={
-                                    milestone.status === "completed" ? "bg-green-500/20 text-green-400" :
-                                    milestone.status === "active" ? "bg-cyan-500/20 text-cyan-400" :
-                                    "bg-gray-600/20 text-gray-400"
-                                  }>
-                                    {milestone.status}
+
+                              {/* Progress Bar */}
+                              {milestone.status === "active" && (
+                                <div className="mb-6">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm text-gray-400">Progress</span>
+                                    <span className="text-sm font-medium text-cyan-400">{milestone.progress}%</span>
+                                  </div>
+                                  <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-cyan-400 to-cyan-500 transition-all duration-1000 ease-out rounded-full"
+                                      style={{ width: `${milestone.progress}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Info Grid */}
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                <div className="text-center p-3 bg-black/30 rounded-lg border border-white/5">
+                                  <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Status</div>
+                                  <Badge className={`text-xs font-medium ${
+                                    milestone.status === "completed" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                                    milestone.status === "active" ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" :
+                                    "bg-gray-600/20 text-gray-400 border-gray-500/30"
+                                  }`}>
+                                    {milestone.status === "completed" ? "✓ Complete" :
+                                     milestone.status === "active" ? "⏳ Active" :
+                                     "⏸ Pending"}
                                   </Badge>
                                 </div>
-                                
-                                <div>
-                                  <div className="text-xs text-gray-400">Progress</div>
-                                  <div className="text-sm text-white">{milestone.progress}%</div>
+
+                                <div className="text-center p-3 bg-black/30 rounded-lg border border-white/5">
+                                  <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Progress</div>
+                                  <div className="text-lg font-bold text-white">{milestone.progress}%</div>
                                 </div>
-                                
-                                <div>
-                                  <div className="text-xs text-gray-400">Funds</div>
-                                  <div className="text-sm">
+
+                                <div className="text-center p-3 bg-black/30 rounded-lg border border-white/5">
+                                  <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Funds</div>
+                                  <div className="text-sm font-medium">
                                     {milestone.fundsReleased ? (
-                                      <span className="text-green-400">Released</span>
+                                      <span className="text-green-400">✓ Released</span>
                                     ) : milestone.pendingVote ? (
-                                      <span className="text-yellow-400">Pending Vote</span>
+                                      <span className="text-yellow-400">🗳 Pending Vote</span>
                                     ) : (
-                                      <span className="text-gray-400">Locked</span>
+                                      <span className="text-gray-400">🔒 Locked</span>
                                     )}
                                   </div>
                                 </div>
-                                
-                                <div>
-                                  <div className="text-xs text-gray-400">Evidence</div>
-                                  <div className="text-sm text-white">{milestone.evidence.length} files</div>
+
+                                <div className="text-center p-3 bg-black/30 rounded-lg border border-white/5">
+                                  <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Evidence</div>
+                                  <div className="text-lg font-bold text-white">{milestone.evidence.length}</div>
                                 </div>
                               </div>
-                              
+
+                              {/* Completion Status */}
                               {milestone.status === "completed" && milestone.completedDate && (
-                                <div className="mt-3 p-2 bg-green-500/10 border border-green-500/30 rounded">
-                                  <div className="text-xs text-green-400">✓ Completed on {milestone.completedDate}</div>
+                                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                                  <div className="flex items-center space-x-2">
+                                    <CheckCircle className="w-5 h-5 text-green-400" />
+                                    <span className="text-sm font-medium text-green-400">
+                                      Completed on {milestone.completedDate}
+                                    </span>
+                                  </div>
                                 </div>
                               )}
-                              
+
+                              {/* Voting Section */}
                               {milestone.pendingVote && (
-                                <div className="mt-3 flex justify-between items-center">
-                                  <div className="text-sm text-yellow-400">Vote required for funding release</div>
-                                  <Button 
-                                    size="sm" 
-                                    className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
-                                    onClick={() => {
-                                      setSelectedMilestone(milestone);
-                                      setMilestoneVoteModalOpen(true);
-                                    }}
-                                  >
-                                    <Vote className="w-4 h-4 mr-1" />
-                                    Vote
-                                  </Button>
+                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div className="flex items-center space-x-2">
+                                      <Vote className="w-5 h-5 text-yellow-400" />
+                                      <span className="text-sm font-medium text-yellow-400">
+                                        Vote required for funding release
+                                      </span>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30 transition-all duration-300"
+                                      onClick={() => {
+                                        setSelectedMilestone(milestone);
+                                        setMilestoneVoteModalOpen(true);
+                                      }}
+                                    >
+                                      <Vote className="w-4 h-4 mr-2" />
+                                      Vote Now
+                                    </Button>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -974,59 +1221,105 @@ export default function ProjectPage() {
                       ))}
                     </div>
                   </div>
-                  
-                  {/* Budget Summary */}
-                  <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/30">
-                    <div className="text-sm font-semibold text-gray-300 mb-3">Budget Summary</div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-400">
+
+                  {/* Enhanced Budget Summary */}
+                  <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/30">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        <Award className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-white">Budget Summary</h4>
+                        <p className="text-sm text-gray-400">Funding allocation across all milestones</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="text-center p-6 bg-green-500/10 border border-green-500/30 rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-3">
+                          <CheckCircle className="w-6 h-6 text-green-400" />
+                        </div>
+                        <div className="text-3xl font-bold text-green-400 mb-2">
                           ${mockProject.proposal.milestones.filter(m => m.fundsReleased).reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-400">Released</div>
+                        <div className="text-sm text-gray-400 uppercase tracking-wide">Released</div>
+                        <div className="text-xs text-green-400 mt-1">
+                          {mockProject.proposal.milestones.filter(m => m.fundsReleased).length} milestone(s)
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-yellow-400">
+
+                      <div className="text-center p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-3">
+                          <Vote className="w-6 h-6 text-yellow-400" />
+                        </div>
+                        <div className="text-3xl font-bold text-yellow-400 mb-2">
                           ${mockProject.proposal.milestones.filter(m => m.pendingVote).reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-400">Pending Vote</div>
+                        <div className="text-sm text-gray-400 uppercase tracking-wide">Pending Vote</div>
+                        <div className="text-xs text-yellow-400 mt-1">
+                          {mockProject.proposal.milestones.filter(m => m.pendingVote).length} milestone(s)
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-400">
+
+                      <div className="text-center p-6 bg-gray-500/10 border border-gray-500/30 rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-gray-500/20 flex items-center justify-center mx-auto mb-3">
+                          <Clock className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <div className="text-3xl font-bold text-gray-400 mb-2">
                           ${mockProject.proposal.milestones.filter(m => !m.fundsReleased && !m.pendingVote).reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-400">Locked</div>
+                        <div className="text-sm text-gray-400 uppercase tracking-wide">Locked</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {mockProject.proposal.milestones.filter(m => !m.fundsReleased && !m.pendingVote).length} milestone(s)
+                        </div>
                       </div>
                     </div>
                   </Card>
                 </div>
-                
-                <div>
-                  <span className="font-semibold mb-4 block">Update Logs:</span>
+
+                {/* Update Logs Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-cyan-400" />
+                    </div>
+                    <h4 className="text-lg font-bold text-white">Update Logs</h4>
+                  </div>
                   <div className="space-y-3">
                     {mockProject.progress.logs.map((log, i) => (
-                      <div key={i} className="flex items-start space-x-3 p-3 bg-black/30 rounded-lg border-l-4 border-cyan-500/50">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
+                      <div key={i} className="flex items-start space-x-4 p-4 bg-black/30 rounded-lg border-l-4 border-cyan-500/50 hover:bg-black/40 transition-colors">
+                        <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
                           log.type === "milestone" ? "bg-green-500" :
                           log.type === "funding" ? "bg-purple-500" : "bg-cyan-500"
                         }`} />
                         <div className="flex-1">
-                          <div className="text-sm text-white">{log.msg}</div>
+                          <div className="text-sm font-medium text-white">{log.msg}</div>
                           <div className="text-xs text-gray-400 mt-1">{log.time}</div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-                
-                <div>
-                  <span className="font-semibold mb-4 block">Research Artifacts:</span>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                {/* Research Artifacts Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <Download className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <h4 className="text-lg font-bold text-white">Research Artifacts</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {mockProject.progress.artifacts.map((a, i) => (
-                      <Card key={i} className="p-3 bg-black/30 border border-white/10 hover:border-cyan-500/30 transition-colors">
-                        <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300">
-                          <Download className="w-4 h-4" />
-                          <span>{a.name}</span>
+                      <Card key={i} className="p-4 bg-black/30 border border-white/10 hover:border-cyan-500/30 transition-all duration-300">
+                        <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 text-cyan-400 hover:text-cyan-300 group">
+                          <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
+                            <Download className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium">{a.name}</div>
+                            <div className="text-xs text-gray-400 capitalize">{a.type}</div>
+                          </div>
                         </a>
                       </Card>
                     ))}
@@ -1038,42 +1331,230 @@ export default function ProjectPage() {
 
           {tab === "returns" && (
             <SectionCard title="Returns / Royalties">
-              <div className="space-y-6">
+              <div className="space-y-8">
+                {/* Revenue Model Selection with Interactive Cards */}
                 <div>
-                  <span className="font-semibold mb-2 block">Expected Revenue Models:</span>
-                  <select className="bg-black/40 border border-white/10 rounded px-3 py-2 text-white focus:border-cyan-500">
-                    {mockProject.returns.revenueModels.map((model) => (
-                      <option key={model}>{model}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <span className="font-semibold mb-4 block">Profit Breakdown Model:</span>
-                  <EnhancedPieChart data={mockProject.returns.profitBreakdown} />
-                </div>
-                
-                <div>
-                  <span className="font-semibold mb-4 block">History of Payouts:</span>
-                  <div className="space-y-2">
-                    {mockProject.returns.payouts.map((p, i) => (
-                      <Card key={i} className="p-3 bg-black/30 border border-white/10">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-semibold text-white">{p.funder}</div>
-                            <div className="text-xs text-gray-400">{p.date}</div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-semibold text-lg">Expected Revenue Models:</span>
+                    <Badge className="bg-cyan-500/20 text-cyan-400">
+                      {mockProject.returns.revenueModels.length} Models Available
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {mockProject.returns.revenueModels.map((model, index) => (
+                      <Card
+                        key={model}
+                        className={`p-4 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                          index === 0
+                            ? "bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border-cyan-500/50 shadow-lg shadow-cyan-500/20"
+                            : "bg-black/30 border-white/10 hover:border-cyan-500/30"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            index === 0 ? "bg-cyan-500 animate-pulse" : "bg-gray-500"
+                          }`} />
+                          <div className="flex-1">
+                            <div className="font-semibold text-white">{model}</div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {index === 0 && "Primary Revenue Stream"}
+                              {index === 1 && "Secondary Revenue Stream"}
+                              {index === 2 && "Alternative Revenue Stream"}
+                            </div>
                           </div>
-                          <div className="text-lg font-bold text-green-400">${p.amount}</div>
+                          {index === 0 && (
+                            <Badge className="bg-green-500/20 text-green-400 text-xs">Active</Badge>
+                          )}
                         </div>
                       </Card>
                     ))}
                   </div>
                 </div>
-                
+
+                {/* Enhanced Profit Breakdown with Interactive Elements */}
                 <div>
-                  <span className="font-semibold mb-2 block">Smart Contract Proof:</span>
-                  <div className="bg-black/40 px-3 py-2 rounded text-sm font-mono border border-white/10">
-                    {mockProject.returns.contractProof}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-semibold text-lg">Profit Breakdown Model:</span>
+                    <div className="flex items-center space-x-2">
+                      <Badge className="bg-purple-500/20 text-purple-400">Fair Distribution</Badge>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="flex justify-center">
+                      <EnhancedPieChart data={mockProject.returns.profitBreakdown} />
+                    </div>
+                    <div className="space-y-4">
+                      <div className="text-sm font-semibold text-gray-300 mb-3">Distribution Details:</div>
+                      {mockProject.returns.profitBreakdown.map((item) => (
+                        <Card key={item.label} className="p-4 bg-black/30 border border-white/10 hover:border-cyan-500/30 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <div>
+                                <div className="font-semibold text-white">{item.label}</div>
+                                <div className="text-xs text-gray-400">
+                                  {item.label === "Researchers" && "Original research team"}
+                                  {item.label === "Funders" && "Project contributors & investors"}
+                                  {item.label === "Platform" && "PaperFans platform fee"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold" style={{ color: item.color }}>
+                                {item.value}%
+                              </div>
+                              <div className="text-xs text-gray-400">of profits</div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enhanced Payout History with Filters and Analytics */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-semibold text-lg">History of Payouts:</span>
+                    <div className="flex items-center space-x-2">
+                      <Badge className="bg-green-500/20 text-green-400">
+                        ${mockProject.returns.payouts.reduce((sum, p) => sum + p.amount, 0)} Total
+                      </Badge>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Download className="w-3 h-3 mr-1" />
+                        Export
+                      </Button>
+                    </div>
+                  </div>
+
+                  {mockProject.returns.payouts.length > 0 ? (
+                    <div className="space-y-3">
+                      {mockProject.returns.payouts.map((p, i) => (
+                        <Card key={i} className="p-4 bg-black/30 border border-white/10 hover:border-green-500/30 transition-all duration-300 hover:scale-[1.02]">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <span className="text-sm text-green-400">{p.funder[0]}</span>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-white">{p.funder}</div>
+                                <div className="text-xs text-gray-400 flex items-center space-x-2">
+                                  <Calendar className="w-3 h-3" />
+                                  <span>{p.date}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xl font-bold text-green-400">${p.amount}</div>
+                              <div className="text-xs text-gray-400">Royalty Payment</div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="p-8 bg-black/30 border border-white/10 text-center">
+                      <div className="text-gray-400 mb-2">No payouts yet</div>
+                      <div className="text-sm text-gray-500">
+                        Payouts will appear here once the project generates revenue
+                      </div>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Enhanced Smart Contract Section with Interactive Elements */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-semibold text-lg">Smart Contract Proof:</span>
+                    <div className="flex items-center space-x-2">
+                      <Badge className="bg-blue-500/20 text-blue-400">Verified</Badge>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+                  <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/30">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <span className="text-blue-400 text-xs">SC</span>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">Revenue Distribution Contract</div>
+                        <div className="text-xs text-gray-400">Deployed on IOTA Network</div>
+                      </div>
+                    </div>
+                    <div className="bg-black/40 px-4 py-3 rounded-lg border border-white/10 font-mono text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-cyan-400">{mockProject.returns.contractProof}</span>
+                        <Button size="sm" variant="ghost" className="text-xs p-1">
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">Automated</div>
+                        <div className="text-xs text-gray-400">Distribution</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">Transparent</div>
+                        <div className="text-xs text-gray-400">On-Chain</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">Immutable</div>
+                        <div className="text-xs text-gray-400">Rules</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">Real-time</div>
+                        <div className="text-xs text-gray-400">Payouts</div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Revenue Transparency Dashboard */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-semibold text-lg">Revenue Transparency:</span>
+                    <Badge className="bg-green-500/20 text-green-400">Live Data</Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30">
+                      <div className="flex items-center space-x-3">
+                        <TrendingUp className="w-8 h-8 text-green-400" />
+                        <div>
+                          <div className="text-2xl font-bold text-white">$12,500</div>
+                          <div className="text-sm text-gray-400">Total Revenue Generated</div>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border-cyan-500/30">
+                      <div className="flex items-center space-x-3">
+                        <Users className="w-8 h-8 text-cyan-400" />
+                        <div>
+                          <div className="text-2xl font-bold text-white">23</div>
+                          <div className="text-sm text-gray-400">Beneficiaries</div>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/30">
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-8 h-8 text-purple-400" />
+                        <div>
+                          <div className="text-2xl font-bold text-white">6</div>
+                          <div className="text-sm text-gray-400">Months Active</div>
+                        </div>
+                      </div>
+                    </Card>
                   </div>
                 </div>
               </div>
