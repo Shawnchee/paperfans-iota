@@ -4,6 +4,13 @@
 
 PaperFans is a revolutionary Web3 platform that democratizes scientific research funding through blockchain technology. Researchers can submit their papers, receive funding from the community, and share future revenue with their supporters.
 
+## 🏗️ Architecture
+
+This project consists of two main repositories:
+
+- **Frontend Application** (this repository): Next.js web application with IOTA Identity integration
+- **Smart Contracts** ([isc-rwa](https://github.com/Shawnchee/isc-rwa)): IOTA Smart Contracts for MUSDT tokens and RWA functionality
+
 ## 🌟 Features
 
 - **Decentralized Funding**: Community-driven research funding using IOTA tokens
@@ -34,7 +41,7 @@ Before running this project, make sure you have:
 
 ## 🛠️ Installation
 
-1. **Clone the repository**
+1. **Clone the frontend repository**
    ```bash
    git clone <repository-url>
    cd paperfans-iota
@@ -63,6 +70,13 @@ Before running this project, make sure you have:
    # File: supabase-schema.sql
    ```
 
+5. **Deploy smart contracts (Optional for development)**
+   ```bash
+   # Clone and deploy the smart contracts
+   git clone https://github.com/Shawnchee/isc-rwa.git
+   # Follow the deployment instructions in the Smart Contract Integration section
+   ```
+
 ## 🏃‍♂️ Getting Started
 
 1. **Start the development server**
@@ -86,6 +100,8 @@ Before running this project, make sure you have:
 
 ### MUSDT Token Contract
 
+**Smart Contract Repository**: [isc-rwa](https://github.com/Shawnchee/isc-rwa)
+
 **Contract Address**: `[PLACEHOLDER - UPDATE AFTER DEPLOYMENT]`
 
 **Treasury Cap**: `[PLACEHOLDER - UPDATE AFTER DEPLOYMENT]`
@@ -96,14 +112,24 @@ Before running this project, make sure you have:
 
 ### Deployment Instructions
 
-1. **Deploy the MUSDT contract**
+1. **Clone the smart contract repository**
    ```bash
-   cd contract/isc-rwa/smart-contracts2
+   git clone https://github.com/Shawnchee/isc-rwa.git
+   cd isc-rwa
+   ```
+
+2. **Navigate to the smart contracts directory**
+   ```bash
+   cd smart-contracts2
+   ```
+
+3. **Build and deploy the MUSDT contract**
+   ```bash
    sui move build
    sui client publish --gas-budget 10000000
    ```
 
-2. **Update configuration**
+4. **Update configuration in this project**
    Edit `src/lib/contract-config.ts` with your deployed contract addresses:
    ```typescript
    export const CONTRACT_CONFIG = {
@@ -114,6 +140,13 @@ Before running this project, make sure you have:
      }
    };
    ```
+
+### Smart Contract Features
+
+The [isc-rwa repository](https://github.com/Shawnchee/isc-rwa) includes:
+- **MUSDT Token**: Mock USDT implementation for testing and development
+- **Real World Asset (RWA) Integration**: Smart contracts for tokenizing real-world assets
+- **IOTA Smart Contract (ISC) Compatibility**: Built for the IOTA ecosystem
 
 For detailed deployment instructions, see [MUSDT_INTEGRATION.md](./MUSDT_INTEGRATION.md).
 
@@ -184,15 +217,6 @@ For testing the MUSDT integration:
    ```bash
    npm run start
    ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -204,15 +228,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Verify wallet connection and network settings
 - Check browser console for error messages
 
-## 🔮 Roadmap
-
-- [ ] Enhanced analytics dashboard
-- [ ] Multi-token support
-- [ ] Governance features
-- [ ] Mobile app
-- [ ] Integration with academic institutions
-- [ ] Peer review system
-
----
-
-Built with ❤️ using IOTA Identity and Next.js
