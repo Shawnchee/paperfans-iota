@@ -8,7 +8,7 @@ import { DollarSign, Loader2, CheckCircle, Wallet, AlertCircle } from "lucide-re
 import { ConnectButton, useCurrentAccount } from '@iota/dapp-kit';
 import { useMUSDT } from "@/lib/musdt-service";
 import { useToast } from "@/hooks/use-toast";
-import { ContractStatus } from "@/components/contract-status";
+
 
 export default function OnrampPage() {
   const [amount, setAmount] = useState("");
@@ -59,24 +59,24 @@ export default function OnrampPage() {
         setBalance((b) => b + amt);
         setAmount("");
         toast({
-          title: "MUSDT Minted Successfully!",
+          title: "MUSDT Purchased Successfully!",
           description: `Transaction ID: ${result.transactionId}`,
         });
       } else {
         setError(result.error || "Failed to mint MUSDT");
         toast({
-          title: "Minting Failed",
-          description: result.error || "Failed to mint MUSDT",
+          title: "Purchase Failed",
+          description: result.error || "Failed to purchase MUSDT",
           variant: "destructive",
         });
       }
     } catch (err) {
       setError("An unexpected error occurred");
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while minting MUSDT",
-        variant: "destructive",
-      });
+              toast({
+          title: "Error",
+          description: "An unexpected error occurred while purchasing MUSDT",
+          variant: "destructive",
+        });
     } finally {
       setProcessing(false);
     }
@@ -91,19 +91,23 @@ export default function OnrampPage() {
   return (
     <div className="min-h-screen pt-20 flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black">
       <div className="max-w-4xl w-full space-y-6">
-        {/* Contract Status */}
-        <ContractStatus className="mb-6" />
-        
         {/* Main Onramp Card */}
         <Card className="max-w-md w-full p-8 shadow-lg bg-black/80 border border-white/10 mx-auto">
-          <h1 className="text-2xl font-bold mb-6 neon-cyan text-center">Onramping & Wallet Balance</h1>
+          <h1 className="text-2xl font-bold mb-6 neon-cyan text-center">Purchase MUSDT & Wallet Balance</h1>
           
           {/* Wallet Connection Status */}
           <div className="mb-6 p-4 rounded-lg border border-white/10 bg-black/50">
             {isConnected ? (
-              <div className="flex items-center space-x-2 text-green-400">
-                <Wallet className="h-5 w-5" />
-                <span className="text-sm">Wallet Connected</span>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-green-400">
+                  <Wallet className="h-5 w-5" />
+                  <span className="text-sm">Wallet Connected</span>
+                </div>
+                {account?.address && (
+                  <div className="text-xs text-gray-400 font-mono">
+                    Address: {account.address.slice(0, 6)}...{account.address.slice(-4)}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center space-x-2 text-yellow-400">
@@ -132,7 +136,7 @@ export default function OnrampPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-gray-400 mb-1 font-medium">
-                How much MUSDT do you want to mint?
+                How much MUSDT do you want to purchase?
               </label>
               <Input
                 type="number"
@@ -157,12 +161,12 @@ export default function OnrampPage() {
               onClick={handleBuy}
               disabled={processing || !amount || parseFloat(amount) <= 0 || !isConnected}
             >
-              {isConnected ? "Mint MUSDT" : "Connect Wallet First"}
+              {isConnected ? "Purchase MUSDT" : "Connect Wallet First"}
             </Button>
           </div>
 
           <div className="mt-8 text-xs text-gray-500 text-center">
-            MUSDT is a test token for demo purposes only. Connect your wallet to mint tokens.
+            MUSDT is a test token for demo purposes only. Connect your wallet to purchase tokens.
           </div>
         </Card>
       </div>
@@ -174,7 +178,7 @@ export default function OnrampPage() {
             {processing ? (
               <>
                 <Loader2 className="h-10 w-10 neon-cyan animate-spin mb-4" />
-                <div className="text-lg text-gray-200 mb-2">Minting MUSDT...</div>
+                <div className="text-lg text-gray-200 mb-2">Purchasing MUSDT...</div>
                 <div className="text-sm text-gray-400 text-center">
                   This may take a few moments
                 </div>
@@ -182,7 +186,7 @@ export default function OnrampPage() {
             ) : success ? (
               <>
                 <CheckCircle className="h-10 w-10 text-green-400 mb-4" />
-                <div className="text-lg text-green-400 mb-2">MUSDT Minted Successfully!</div>
+                <div className="text-lg text-green-400 mb-2">MUSDT Purchased Successfully!</div>
                 <div className="text-sm text-gray-400 text-center mb-4">
                   Your tokens have been added to your wallet
                 </div>
@@ -193,7 +197,7 @@ export default function OnrampPage() {
             ) : error ? (
               <>
                 <AlertCircle className="h-10 w-10 text-red-400 mb-4" />
-                <div className="text-lg text-red-400 mb-2">Minting Failed</div>
+                <div className="text-lg text-red-400 mb-2">Purchase Failed</div>
                 <div className="text-sm text-gray-400 text-center mb-4">
                   {error}
                 </div>

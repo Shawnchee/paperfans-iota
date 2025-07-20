@@ -16,13 +16,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Contract addresses from our deployed contract
-    const contractAddress = "0x0340088cd31baeb07c273153374813aa4995a7db7027cf719fb15fd0f93dbd67";
-    const treasuryCapAddress = "0x03a26b77ff708f7eee59df15c7268a153689f5fdc4a178b188f636c180f5769a";
-    const supplyAddress = "0x4ac50eb063d74666218ae9c8b3b06a5dddb499139ba41fe0b886bf7f4d562de1";
+    // Convert MUSDT amount to base units (1 MUSDT = 1,000,000 base units)
+    const amountInBaseUnits = Math.floor(amount * 1000000);
 
-    // Execute the mint command using IOTA CLI
-    const mintCommand = `iota client call --package ${contractAddress} --module MockUSDT --function mint --args ${treasuryCapAddress} ${supplyAddress} ${amount} ${userAddress} --gas-budget 10000000`;
+    console.log(`Converting ${amount} MUSDT to ${amountInBaseUnits} base units`);
+
+    // Contract addresses from our deployed contract (Updated)
+    const contractAddress = "0x70a3bbc4b242cc53f8fbd6f8d84123eb7d642adbccbf3ce2bb4e5650cd95b9dd";
+    const treasuryCapAddress = "0x3492a81d2f629d7fe0ab83c7c92bd9c685b5255a83ea5db0aed4c9a443c766ac";
+    const supplyAddress = "0x98d11e2dd7da43c9882b918fd2809c906599dd2eb4c34983471a8851f17c044e";
+
+    // Execute the mint command using IOTA CLI with base units
+    const mintCommand = `iota client call --package ${contractAddress} --module MockUSDT --function mint --args ${treasuryCapAddress} ${supplyAddress} ${amountInBaseUnits} ${userAddress} --gas-budget 10000000`;
 
     console.log('Executing mint command:', mintCommand);
 

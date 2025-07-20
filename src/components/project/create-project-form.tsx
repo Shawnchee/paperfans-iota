@@ -22,7 +22,9 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, Plus, X } from "lucide-react";
+import { Loader2, Upload, Plus, X, Wallet, AlertCircle } from "lucide-react";
+// import { ConnectButton, useCurrentAccount } from '@iota/dapp-kit';
+import { useResearch, ResearchProposalData } from "@/lib/research-service";
 
 interface CreateProjectFormData {
   title: string;
@@ -70,6 +72,18 @@ export function CreateProjectForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeployingContract, setIsDeployingContract] = useState(false);
+  
+  // const account = useCurrentAccount();
+  // const { createProposal, isConnected } = useResearch();
+  
+  // Temporary mock values for testing
+  const account = { address: "0x1234567890abcdef" };
+  const isConnected = true;
+  const createProposal = async (data: ResearchProposalData) => {
+    // Mock implementation for testing
+    return { success: true, transactionId: "mock-tx-123", proposalId: "mock-proposal-123", error: undefined };
+  };
 
   const [formData, setFormData] = useState<CreateProjectFormData>({
     title: "",
@@ -155,6 +169,15 @@ export function CreateProjectForm() {
       return;
     }
 
+    if (!isConnected) {
+      toast({
+        title: "Wallet Connection Required",
+        description: "Please connect your wallet to deploy the smart contract",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validation
     if (
       !formData.title ||
@@ -181,54 +204,77 @@ export function CreateProjectForm() {
     }
 
     setIsLoading(true);
+    setIsDeployingContract(true);
 
     try {
-      const authHeaders = getAuthHeaders();
-      if (!authHeaders) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in again",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Prepare payload to match backend API (camelCase for required fields, timeline as array)
-      const payload = {
+      // Prepare the proposal data for the smart contract
+      const proposalData: ResearchProposalData = {
         title: formData.title,
         abstract: formData.abstract,
         category: formData.category,
+        domain: formData.domain,
+        tags: formData.tags,
+        technicalApproach: formData.technicalApproach,
+        projectImage: formData.imageUrl,
         authorName: formData.authorName,
         authorAffiliation: formData.authorAffiliation,
         authorImage: formData.authorImage,
-        imageUrl: formData.imageUrl,
+        orcidId: formData.orcidId,
         fundingGoal: formData.fundingGoal,
-        daysLeft: formData.daysLeft,
-        technicalApproach: formData.technicalApproach,
-        timeline: formData.timeline, // send as array, let backend stringify
+        campaignDurationDays: formData.daysLeft,
+        researchTeamPercentage: researchTeamPct,
+        revenueModels: formData.returns.revenueModels
       };
 
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders,
-        },
-        body: JSON.stringify(payload),
-      });
+      // Create the research proposal using the smart contract
+      const result = await createProposal(proposalData);
 
-      if (!response.ok) {
-        throw new Error("Failed to create project");
+      if (result.success) {
+        toast({
+          title: "Research Proposal Deployed!",
+          description: `Transaction ID: ${result.transactionId}`,
+        });
+
+        // Also save to the database for the web interface
+        const authHeaders = getAuthHeaders();
+        if (authHeaders) {
+          const payload = {
+            title: formData.title,
+            abstract: formData.abstract,
+            category: formData.category,
+            authorName: formData.authorName,
+            authorAffiliation: formData.authorAffiliation,
+            authorImage: formData.authorImage,
+            imageUrl: formData.imageUrl,
+            fundingGoal: formData.fundingGoal,
+            daysLeft: formData.daysLeft,
+            technicalApproach: formData.technicalApproach,
+            timeline: formData.timeline,
+            blockchainTransactionId: result.transactionId,
+            blockchainProposalId: result.proposalId
+          };
+
+          const response = await fetch("/api/projects", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...authHeaders,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            const dbResult = await response.json();
+            router.push(`/project/${dbResult.id}`);
+          }
+        }
+      } else {
+        toast({
+          title: "Smart Contract Deployment Failed",
+          description: result.error || "Failed to deploy research proposal to blockchain",
+          variant: "destructive",
+        });
       }
-
-      const result = await response.json();
-
-      toast({
-        title: "Project Created!",
-        description: "Your research project has been published successfully",
-      });
-
-      router.push(`/project/${result.id}`);
     } catch (error) {
       toast({
         title: "Creation Failed",
@@ -237,6 +283,7 @@ export function CreateProjectForm() {
       });
     } finally {
       setIsLoading(false);
+      setIsDeployingContract(false);
     }
   };
 
@@ -259,10 +306,38 @@ export function CreateProjectForm() {
             Publish Your Research
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Share your groundbreaking research with the PaperFans community
+            Share your groundbreaking research with the PaperFans community and deploy it on the blockchain
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Wallet Connection Status */}
+          <div className="mb-6 p-4 rounded-lg border border-white/10 bg-black/50">
+            {isConnected ? (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-green-400">
+                  <Wallet className="h-5 w-5" />
+                  <span className="text-sm">Wallet Connected</span>
+                </div>
+                {account?.address && (
+                  <div className="text-xs text-gray-400 font-mono">
+                    Address: {account.address.slice(0, 6)}...{account.address.slice(-4)}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 text-yellow-400">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">Wallet Not Connected</span>
+              </div>
+            )}
+            <div className="mt-2">
+              {/* Temporarily disabled ConnectButton */}
+              <Button variant="outline" className="w-full">
+                Connect Wallet (Temporarily Disabled)
+              </Button>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
             <div className="space-y-6">
@@ -666,7 +741,7 @@ export function CreateProjectForm() {
                           type="number"
                           min={0}
                           value={`${item.amountNeeded ?? ''}`}
-                          onChange={(e) => updateTimelineItem(index, "amountNeeded", parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateTimelineItem(index, "amountNeeded", (parseFloat(e.target.value) || 0).toString())}
                           className="sci-fi-input text-white placeholder-gray-400"
                           placeholder="Amount needed for this phase"
                         />
@@ -750,16 +825,16 @@ export function CreateProjectForm() {
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !isConnected}
                 className="sci-fi-button text-white font-semibold"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Project...
+                    {isDeployingContract ? "Deploying Smart Contract..." : "Creating Project..."}
                   </>
                 ) : (
-                  <span className="relative z-10">Publish Project</span>
+                  <span className="relative z-10">Deploy Research Proposal</span>
                 )}
               </Button>
             </div>
