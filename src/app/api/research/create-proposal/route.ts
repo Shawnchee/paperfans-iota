@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
 
     // New contract addresses from the updated deployment
     console.log("📋 Contract addresses:");
-    const contractAddress = "0xcf6cc4724e561e956969b01f980bcb049ae3566eb25fdc48431f218bd2a8a319";
-    const treasuryCapAddress = "0xcf8669213e29f9d40f9dbf65c77c5d23f75a8767d17c90a3df31c094c419d675";
-    const policyCapAddress = "0xa171b489137e7d5bcb9d9fce03466975bb42b90a7dedddb7b7b4a0062eef1270";
+    const contractAddress = "0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e";
+    const treasuryCapAddress = "0xec7e4ce73a383e0dcfbd9e76116f5c455a24716be6496173bbb1f729796b0e96";
+    const policyCapAddress = "0x21417547c0a56bccd7ca38f2db46253af9894294b179262695c75d2595454916";
     console.log("  - Contract:", contractAddress);
     console.log("  - Treasury cap:", treasuryCapAddress);
     console.log("  - Policy cap:", policyCapAddress);

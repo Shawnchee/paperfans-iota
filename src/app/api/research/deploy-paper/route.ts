@@ -81,8 +81,9 @@ export async function POST(request: NextRequest) {
 
     // Contract addresses from your deployed factory contract
     console.log("📋 Contract addresses:");
-    const factoryAddress = "0x..."; // Replace with your factory contract address
+    const factoryAddress = "0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e"; // Replace with your factory contract address
     const musdtAddress = "0x70a3bbc4b242cc53f8fbd6f8d84123eb7d642adbccbf3ce2bb4e5650cd95b9dd";
+    const policyCapId= "0x21417547c0a56bccd7ca38f2db46253af9894294b179262695c75d2595454916"
     console.log("  - Factory:", factoryAddress);
     console.log("  - MUSDT:", musdtAddress);
 
@@ -92,10 +93,17 @@ export async function POST(request: NextRequest) {
     const revenueModelsString = revenueModels && revenueModels.length > 0 ? revenueModels.join(',') : "";
     console.log("  - Tags string:", tagsString);
     console.log("  - Revenue models string:", revenueModelsString);
+    const formattedTags = tagsString ? `[${tagsString.split(',').map((tag: string) => `"${tag}"`).join(',')}]` : '[]';
+    const formattedRevenueModels = revenueModelsString ? `[${revenueModelsString.split(',').map((model: string) => `"${model}"`).join(',')}]` : '[]';
 
+    const ensureHexPrefix = (id: string) => id.startsWith('0x') ? id : `0x${id}`;
+
+    // Format the treasury cap ID - assuming this is where the error is
+    const treasuryCapId = "0xec7e4ce73a383e0dcfbd9e76116f5c455a24716be6496173bbb1f729796b0e96"; // Replace with your actual treasury cap ID
+    const formattedTreasuryCapId = ensureHexPrefix(treasuryCapId);
+    const formattedPolicyCapId = ensureHexPrefix(policyCapId);
     // Create the deploy paper command
-    const deployPaperCommand = `iota client call --package ${factoryAddress} --module PaperFactory --function deploy_paper --args "${title}" "${abstract}" "${category}" "${domain}" "${tagsString}" "${technicalApproach || ''}" "${projectImage || ''}" "${authorName}" "${authorAffiliation}" "${authorImage || ''}" "${orcidId || ''}" ${fundingGoal} ${campaignDurationDays} ${researchTeamPercentage} "${revenueModelsString}" ${rcltPriceInMusdt} --gas-budget 100000000`;
-
+    const deployPaperCommand = `iota client call --package ${factoryAddress} --module ResearchToken --function create_proposal --args "${title}" "${abstract}" "${category}" "${domain}" ${formattedTags} "${technicalApproach || ''}" "${projectImage || ''}" "${authorName}" "${authorAffiliation}" "${authorImage || ''}" "${orcidId || ''}" ${fundingGoal} ${campaignDurationDays} ${researchTeamPercentage} ${formattedRevenueModels} ${formattedTreasuryCapId} ${formattedPolicyCapId} --gas-budget 100000000`;
     console.log('🚀 Executing deploy_paper command:');
     console.log('Command:', deployPaperCommand);
 
