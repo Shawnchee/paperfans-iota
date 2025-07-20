@@ -34,9 +34,63 @@ const mockProject = {
       { phase: "Validation", duration: "1m", status: "pending", startDate: "2024-07-01", endDate: "2024-08-01", progress: 0 },
     ],
     milestones: [
-      { name: "Collect 10k protein samples", status: "active", progress: 65, target: 10000, current: 6500 },
-      { name: "Train v1 model", status: "pending", progress: 0, target: 1, current: 0 },
-      { name: "Publish preprint", status: "pending", progress: 0, target: 1, current: 0 },
+      { 
+        name: "Collect 10k protein samples", 
+        status: "completed", 
+        progress: 100, 
+        target: 10000, 
+        current: 10000,
+        budget: 30000,
+        description: "Collect and validate 10,000 protein samples for training dataset",
+        evidence: [
+          { name: "Dataset Summary Report", url: "https://example.com/dataset-report.pdf", type: "report" },
+          { name: "Sample Validation Logs", url: "https://example.com/validation-logs.csv", type: "data" }
+        ],
+        completedDate: "2024-05-15",
+        fundsReleased: true
+      },
+      { 
+        name: "Train v1 model", 
+        status: "active", 
+        progress: 65, 
+        target: 1, 
+        current: 0.65,
+        budget: 45000,
+        description: "Train initial AI model on collected protein data",
+        evidence: [
+          { name: "Training Progress Report", url: "https://example.com/training-report.pdf", type: "report" },
+          { name: "Model Performance Metrics", url: "https://example.com/metrics.json", type: "data" }
+        ],
+        completedDate: null,
+        fundsReleased: false,
+        pendingVote: true
+      },
+      { 
+        name: "Publish preprint", 
+        status: "pending", 
+        progress: 0, 
+        target: 1, 
+        current: 0,
+        budget: 25000,
+        description: "Submit research findings to preprint server",
+        evidence: [],
+        completedDate: null,
+        fundsReleased: false,
+        pendingVote: false
+      },
+      { 
+        name: "Peer Review & Publication", 
+        status: "pending", 
+        progress: 0, 
+        target: 1, 
+        current: 0,
+        budget: 20000,
+        description: "Submit to peer-reviewed journal and address reviewer comments",
+        evidence: [],
+        completedDate: null,
+        fundsReleased: false,
+        pendingVote: false
+      }
     ],
     goalSummary:
       "Success means publishing a high-accuracy, open-access protein folding model and dataset.",
@@ -205,19 +259,40 @@ function InteractiveTimeline({ timeline }: { timeline: any[] }) {
   );
 }
 
-// Interactive Milestone Cards
-function MilestoneCard({ milestone, index }: { milestone: any; index: number }) {
+// Enhanced Milestone Cards with Budget and Voting
+function EnhancedMilestoneCard({ milestone, index, onVoteClick }: { milestone: any; index: number; onVoteClick: (milestone: any) => void }) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed": return "border-green-500/50 bg-green-500/10";
+      case "active": return "border-cyan-500/50 bg-cyan-500/10";
+      case "pending": return "border-gray-500/50 bg-gray-500/10";
+      default: return "border-gray-500/50 bg-gray-500/10";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed": return <CheckCircle className="w-5 h-5 text-white" />;
+      case "active": return <Clock className="w-5 h-5 text-white" />;
+      case "pending": return <span className="text-white text-sm">{index + 1}</span>;
+      default: return <span className="text-white text-sm">{index + 1}</span>;
+    }
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "completed": return "bg-green-500/20 text-green-400";
+      case "active": return "bg-cyan-500/20 text-cyan-400";
+      case "pending": return "bg-gray-600/20 text-gray-400";
+      default: return "bg-gray-600/20 text-gray-400";
+    }
+  };
 
   return (
     <Card 
-      className={`p-4 mb-3 transition-all duration-300 cursor-pointer ${
-        milestone.status === "active" 
-          ? "border-cyan-500/50 bg-cyan-500/10" 
-          : milestone.status === "completed" 
-          ? "border-green-500/50 bg-green-500/10" 
-          : "border-gray-500/50 bg-gray-500/10"
-      } hover:scale-105`}
+      className={`p-4 mb-4 transition-all duration-300 cursor-pointer ${getStatusColor(milestone.status)} hover:scale-105`}
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className="flex items-center justify-between">
@@ -226,36 +301,106 @@ function MilestoneCard({ milestone, index }: { milestone: any; index: number }) 
             milestone.status === "completed" ? "bg-green-500" : 
             milestone.status === "active" ? "bg-cyan-500" : "bg-gray-500"
           }`}>
-            {milestone.status === "completed" && <CheckCircle className="w-5 h-5 text-white" />}
-            {milestone.status === "active" && <Clock className="w-5 h-5 text-white" />}
-            {milestone.status === "pending" && <span className="text-white text-sm">{index + 1}</span>}
+            {getStatusIcon(milestone.status)}
           </div>
-          <div>
+          <div className="flex-1">
             <div className="font-semibold text-white">{milestone.name}</div>
-            <div className="text-sm text-gray-400">{milestone.status}</div>
+            <div className="text-sm text-gray-400">{milestone.description}</div>
+            <div className="flex items-center space-x-4 mt-1">
+              <span className="text-sm text-cyan-400">${milestone.budget.toLocaleString()}</span>
+              {milestone.fundsReleased && (
+                <Badge className="bg-green-500/20 text-green-400 text-xs">Funds Released</Badge>
+              )}
+              {milestone.pendingVote && (
+                <Badge className="bg-yellow-500/20 text-yellow-400 text-xs animate-pulse">Vote Required</Badge>
+              )}
+            </div>
           </div>
         </div>
-        <Badge className={
-          milestone.status === "active" ? "bg-cyan-500/20 text-cyan-400" : 
-          milestone.status === "completed" ? "bg-green-500/20 text-green-400" : 
-          "bg-gray-600/20 text-gray-400"
-        }>
-          {milestone.progress}%
-        </Badge>
+        <div className="flex flex-col items-end space-y-2">
+          <Badge className={getStatusBadgeColor(milestone.status)}>
+            {milestone.progress}%
+          </Badge>
+          {milestone.pendingVote && (
+            <Button 
+              size="sm" 
+              className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+              onClick={(e) => {
+                e.stopPropagation();
+                onVoteClick(milestone);
+              }}
+            >
+              <Vote className="w-4 h-4 mr-1" />
+              Vote
+            </Button>
+          )}
+        </div>
       </div>
       
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Progress:</span>
-              <span className="text-white">{milestone.current}/{milestone.target}</span>
+        <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm font-semibold text-gray-300 mb-2">Progress Details</div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Progress:</span>
+                  <span className="text-white">{milestone.current}/{milestone.target}</span>
+                </div>
+                <Progress value={milestone.progress} className="h-2" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Budget:</span>
+                  <span className="text-cyan-400">${milestone.budget.toLocaleString()}</span>
+                </div>
+                {milestone.completedDate && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Completed:</span>
+                    <span className="text-green-400">{milestone.completedDate}</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <Progress value={milestone.progress} className="h-2" />
-            <div className="flex space-x-2 mt-3">
-              <Button size="sm" variant="outline" className="text-xs">Vote</Button>
-              <Button size="sm" variant="outline" className="text-xs">Details</Button>
+            
+            <div>
+              <div className="text-sm font-semibold text-gray-300 mb-2">Evidence & Documentation</div>
+              <div className="space-y-2">
+                {milestone.evidence.length > 0 ? (
+                  milestone.evidence.map((evidence: any, idx: number) => (
+                    <Card key={idx} className="p-2 bg-black/30 border border-white/10">
+                      <a 
+                        href={evidence.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span className="text-sm">{evidence.name}</span>
+                        <Badge className="text-xs bg-gray-600/20 text-gray-400">{evidence.type}</Badge>
+                      </a>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 italic">No evidence uploaded yet</div>
+                )}
+              </div>
             </div>
+          </div>
+          
+          <div className="flex space-x-2">
+            {milestone.pendingVote && (
+              <Button 
+                size="sm" 
+                className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVoteClick(milestone);
+                }}
+              >
+                <Vote className="w-4 h-4 mr-1" />
+                Vote on Milestone
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="text-xs">View Details</Button>
           </div>
         </div>
       )}
@@ -397,6 +542,18 @@ export default function ProjectPage() {
   const [revokeModalOpen, setRevokeModalOpen] = useState(false);
   const [revokeReason, setRevokeReason] = useState("");
   const [hasSignedRevoke, setHasSignedRevoke] = useState(false);
+  const [milestoneVoteModalOpen, setMilestoneVoteModalOpen] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState<any>(null);
+  const [userVote, setUserVote] = useState<"approve" | "reject" | null>(null);
+  
+  // Mock voting data
+  const mockVoteData = {
+    totalVotes: 23,
+    allowVotes: 18,
+    rejectVotes: 5,
+    timeRemaining: "12h 30m",
+    userHasVoted: false
+  };
 
   // Copy to clipboard
   const handleCopy = () => {
@@ -515,7 +672,15 @@ export default function ProjectPage() {
                   <span className="font-semibold mb-4 block">Milestone Breakdown:</span>
                   <div className="space-y-2">
                     {mockProject.proposal.milestones.map((milestone, index) => (
-                      <MilestoneCard key={index} milestone={milestone} index={index} />
+                      <EnhancedMilestoneCard 
+                        key={index} 
+                        milestone={milestone} 
+                        index={index}
+                        onVoteClick={(milestone) => {
+                          setSelectedMilestone(milestone);
+                          setMilestoneVoteModalOpen(true);
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -664,7 +829,7 @@ export default function ProjectPage() {
           {tab === "progress" && (
             <SectionCard title="Progress Tracker">
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card className="p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border-cyan-500/30">
                     <div className="flex items-center space-x-3">
                       <Target className="w-8 h-8 text-cyan-400" />
@@ -681,6 +846,156 @@ export default function ProjectPage() {
                       <div>
                         <div className="text-lg font-bold text-white">{mockProject.progress.lastUpdated}</div>
                         <div className="text-sm text-gray-400">Last Updated</div>
+                      </div>
+                    </div>
+                  </Card>
+                  
+                  <Card className="p-4 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/30">
+                    <div className="flex items-center space-x-3">
+                      <Vote className="w-8 h-8 text-yellow-400" />
+                      <div>
+                        <div className="text-lg font-bold text-white">1</div>
+                        <div className="text-sm text-gray-400">Pending Votes</div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-semibold text-lg">Milestone-Based Funding</span>
+                    <div className="text-sm text-gray-400">
+                      Total Budget: ${mockProject.proposal.milestones.reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  {/* Milestone Timeline Overview */}
+                  <div className="mb-6">
+                    <div className="text-sm font-semibold text-gray-300 mb-3">Project Timeline & Budget Allocation</div>
+                    <div className="space-y-4">
+                      {mockProject.proposal.milestones.map((milestone, index) => (
+                        <div key={index} className="relative">
+                          {/* Connection Line */}
+                          {index < mockProject.proposal.milestones.length - 1 && (
+                            <div className="absolute left-6 top-12 w-0.5 h-8 bg-gray-600 z-0" />
+                          )}
+                          
+                          <div className="flex items-start space-x-4 relative z-10">
+                            {/* Milestone Number & Status */}
+                            <div className="flex flex-col items-center">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
+                                milestone.status === "completed" 
+                                  ? "bg-green-500 border-green-500 text-white" 
+                                  : milestone.status === "active" 
+                                  ? "bg-cyan-500 border-cyan-500 text-white animate-pulse" 
+                                  : "bg-gray-500 border-gray-500 text-white"
+                              }`}>
+                                {milestone.status === "completed" && <CheckCircle className="w-6 h-6" />}
+                                {milestone.status === "active" && <Clock className="w-6 h-6" />}
+                                {milestone.status === "pending" && <span className="text-sm font-bold">{index + 1}</span>}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">Phase {index + 1}</div>
+                            </div>
+                            
+                            {/* Milestone Content */}
+                            <div className="flex-1 bg-black/30 border border-white/10 rounded-lg p-4 hover:border-cyan-500/30 transition-colors">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                  <div className="font-semibold text-white text-lg">{milestone.name}</div>
+                                  <div className="text-sm text-gray-400 mt-1">{milestone.description}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-cyan-400">${milestone.budget.toLocaleString()}</div>
+                                  <div className="text-xs text-gray-400">Budget</div>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+                                <div>
+                                  <div className="text-xs text-gray-400">Status</div>
+                                  <Badge className={
+                                    milestone.status === "completed" ? "bg-green-500/20 text-green-400" :
+                                    milestone.status === "active" ? "bg-cyan-500/20 text-cyan-400" :
+                                    "bg-gray-600/20 text-gray-400"
+                                  }>
+                                    {milestone.status}
+                                  </Badge>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-400">Progress</div>
+                                  <div className="text-sm text-white">{milestone.progress}%</div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-400">Funds</div>
+                                  <div className="text-sm">
+                                    {milestone.fundsReleased ? (
+                                      <span className="text-green-400">Released</span>
+                                    ) : milestone.pendingVote ? (
+                                      <span className="text-yellow-400">Pending Vote</span>
+                                    ) : (
+                                      <span className="text-gray-400">Locked</span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-400">Evidence</div>
+                                  <div className="text-sm text-white">{milestone.evidence.length} files</div>
+                                </div>
+                              </div>
+                              
+                              {milestone.status === "completed" && milestone.completedDate && (
+                                <div className="mt-3 p-2 bg-green-500/10 border border-green-500/30 rounded">
+                                  <div className="text-xs text-green-400">✓ Completed on {milestone.completedDate}</div>
+                                </div>
+                              )}
+                              
+                              {milestone.pendingVote && (
+                                <div className="mt-3 flex justify-between items-center">
+                                  <div className="text-sm text-yellow-400">Vote required for funding release</div>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+                                    onClick={() => {
+                                      setSelectedMilestone(milestone);
+                                      setMilestoneVoteModalOpen(true);
+                                    }}
+                                  >
+                                    <Vote className="w-4 h-4 mr-1" />
+                                    Vote
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Budget Summary */}
+                  <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/30">
+                    <div className="text-sm font-semibold text-gray-300 mb-3">Budget Summary</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-400">
+                          ${mockProject.proposal.milestones.filter(m => m.fundsReleased).reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-400">Released</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-yellow-400">
+                          ${mockProject.proposal.milestones.filter(m => m.pendingVote).reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-400">Pending Vote</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-gray-400">
+                          ${mockProject.proposal.milestones.filter(m => !m.fundsReleased && !m.pendingVote).reduce((sum, m) => sum + m.budget, 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-400">Locked</div>
                       </div>
                     </div>
                   </Card>
@@ -924,6 +1239,162 @@ export default function ProjectPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => setRevokeModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Milestone Vote Modal */}
+      {milestoneVoteModalOpen && selectedMilestone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10, 20, 40, 0.95)' }}>
+          <div className="rounded-xl p-8 shadow-2xl border border-yellow-500/40 min-w-[500px] flex flex-col bg-gradient-to-br from-[#0a1a28] via-[#1a2233] to-[#0a1a28] backdrop-blur-xl relative">
+            <button className="absolute top-3 right-3 text-gray-400 hover:text-yellow-400" onClick={() => setMilestoneVoteModalOpen(false)}><X className="w-5 h-5" /></button>
+            <div className="flex items-center space-x-3 mb-6">
+              <Vote className="w-8 h-8 text-yellow-400" />
+              <h2 className="text-xl font-bold text-yellow-400">Vote on Milestone Funding</h2>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                <div className="font-semibold text-white mb-2">{selectedMilestone.name}</div>
+                <div className="text-sm text-gray-300 mb-2">{selectedMilestone.description}</div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Budget:</span>
+                  <span className="text-yellow-400 font-semibold">${selectedMilestone.budget.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Progress:</span>
+                  <span className="text-cyan-400">{selectedMilestone.progress}%</span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm font-semibold text-gray-300 mb-3">Evidence Submitted:</div>
+                <div className="space-y-2">
+                  {selectedMilestone.evidence.length > 0 ? (
+                    selectedMilestone.evidence.map((evidence: any, idx: number) => (
+                      <Card key={idx} className="p-3 bg-black/30 border border-white/10">
+                        <a 
+                          href={evidence.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span className="text-sm">{evidence.name}</span>
+                          <Badge className="text-xs bg-gray-600/20 text-gray-400">{evidence.type}</Badge>
+                        </a>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">No evidence uploaded yet</div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Vote Summary */}
+              <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+                <div className="text-sm font-semibold text-gray-300 mb-3">Current Vote Status</div>
+                <div className="grid grid-cols-3 gap-4 mb-3">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-white">{mockVoteData.totalVotes}</div>
+                    <div className="text-xs text-gray-400">Total Votes</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-400">{mockVoteData.allowVotes}</div>
+                    <div className="text-xs text-gray-400">Allow</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-red-400">{mockVoteData.rejectVotes}</div>
+                    <div className="text-xs text-gray-400">Reject</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Allow Progress:</span>
+                    <span className="text-green-400">{Math.round((mockVoteData.allowVotes / mockVoteData.totalVotes) * 100)}%</span>
+                  </div>
+                  <Progress 
+                    value={(mockVoteData.allowVotes / mockVoteData.totalVotes) * 100} 
+                    className="h-2 bg-red-500/20"
+                  />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Time Remaining:</span>
+                    <span className="text-yellow-400 font-mono">{mockVoteData.timeRemaining}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm font-semibold text-gray-300 mb-3">Your Vote:</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    className={`h-12 ${userVote === "approve" 
+                      ? "bg-green-500/20 text-green-400 border-green-500/30" 
+                      : "bg-black/40 text-gray-300 border-white/10 hover:bg-green-500/10"}`}
+                    onClick={() => setUserVote("approve")}
+                  >
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Allow Funding
+                  </Button>
+                  <Button 
+                    className={`h-12 ${userVote === "reject" 
+                      ? "bg-red-500/20 text-red-400 border-red-500/30" 
+                      : "bg-black/40 text-gray-300 border-white/10 hover:bg-red-500/10"}`}
+                    onClick={() => setUserVote("reject")}
+                  >
+                    <X className="w-5 h-5 mr-2" />
+                    Reject Funding
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-black/30 border border-white/10 rounded-lg p-4">
+                <div className="text-sm text-gray-300 mb-2">
+                  <strong>Voting Guidelines:</strong>
+                </div>
+                <div className="text-xs text-gray-400 space-y-1">
+                  • <strong>Allow</strong> if evidence shows milestone completion<br/>
+                  • <strong>Reject</strong> if evidence is insufficient or unclear<br/>
+                  • Majority vote determines funding release<br/>
+                  • Voting period: 48 hours<br/>
+                  • Rejected milestones require additional evidence
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <Button 
+                  className={`flex-1 ${
+                    userVote === "approve" 
+                      ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30" 
+                      : userVote === "reject"
+                      ? "bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
+                      : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+                  }`}
+                  onClick={() => {
+                    // Mock: Submit vote
+                    setMilestoneVoteModalOpen(false);
+                    setUserVote(null);
+                    setSelectedMilestone(null);
+                  }}
+                  disabled={!userVote}
+                >
+                  <Vote className="w-4 h-4 mr-2" />
+                  {userVote === "approve" ? "Submit Allow Vote" : 
+                   userVote === "reject" ? "Submit Reject Vote" : 
+                   "Submit Vote"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setMilestoneVoteModalOpen(false);
+                    setUserVote(null);
+                    setSelectedMilestone(null);
+                  }}
                 >
                   Cancel
                 </Button>
