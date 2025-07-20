@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { Tabs } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,90 +9,87 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
-import { Copy, Download, Share2, X } from "lucide-react";
+import { Copy, Download, Share2, X, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Project } from "@/lib/types";
 
-// Mock data for demonstration
-const mockProject = {
-  title: "AI-Driven Protein Folding Research",
-  abstract:
-    "This project aims to leverage advanced AI models to predict protein structures, accelerating drug discovery and biotechnology innovation.",
-  domain: "Biotech",
-  tags: ["AI", "Biotech", "Drug Discovery"],
-  researcher: {
-    name: "Dr. Ada Lovelace",
-    wallet: "0x1234...abcd",
-    orcid: "0000-0002-1825-0097",
-    avatar: "/next.svg",
-  },
-  proposal: {
-    docUrl: "https://example.com/proposal.pdf",
-    budget: 120000,
-    currency: "USD",
-    timeline: [
-      { phase: "Planning", duration: "1m", status: "completed" },
-      { phase: "Data Collection", duration: "2m", status: "active" },
-      { phase: "Model Training", duration: "3m", status: "pending" },
-      { phase: "Validation", duration: "1m", status: "pending" },
-    ],
-    milestones: [
-      { name: "Collect 10k protein samples", status: "active" },
-      { name: "Train v1 model", status: "pending" },
-      { name: "Publish preprint", status: "pending" },
-    ],
-    goalSummary:
-      "Success means publishing a high-accuracy, open-access protein folding model and dataset.",
-  },
+// Interface for the enhanced project data structure
+interface ProjectDetail extends Project {
+  domain?: string;
+  tags?: string[];
+  researcher?: {
+    name: string;
+    wallet: string;
+    orcid?: string;
+    avatar?: string;
+  };
+  proposal?: {
+    docUrl?: string;
+    budget: number; 
+    currency: string;
+    timeline: Array<{
+      phase: string;
+      duration: string;
+      status: "completed" | "active" | "pending";
+    }>;
+    milestones: Array<{
+      name: string;
+      status: "completed" | "active" | "pending";
+    }>;
+    goalSummary: string;
+  };
   funding: {
-    totalRequired: 120000,
-    raised: 45000,
-    tokenPrice: 1.5,
-    deadline: "2024-08-31",
-  },
-  governance: {
-    votingRights: 1,
-    pastVotes: [
-      { id: 1, desc: "Approve milestone 1", result: "Passed", date: "2024-05-01" },
-      { id: 2, desc: "Change budget allocation", result: "Rejected", date: "2024-06-01" },
-    ],
-  },
-  progress: {
-    currentMilestone: "Data Collection",
-    lastUpdated: "2024-06-10 14:30",
-    logs: [
-      { msg: "Collected 2k samples", time: "2024-06-09" },
-      { msg: "Launched data pipeline", time: "2024-06-05" },
-    ],
-    artifacts: [
-      { name: "Preprint v0.1", url: "https://arxiv.org/abs/1234.5678" },
-      { name: "Dataset sample", url: "https://zenodo.org/record/123456" },
-    ],
-  },
-  returns: {
-    revenueModels: ["Token Royalties", "Licensing", "Open Access"],
-    profitBreakdown: [
-      { label: "Researchers", value: 40 },
-      { label: "Funders", value: 40 },
-      { label: "Platform", value: 20 },
-    ],
-    payouts: [
-      { funder: "Alice", amount: 500 },
-      { funder: "Bob", amount: 300 },
-    ],
-    contractProof: "0xabcdef1234567890",
-  },
-  community: {
-    supporters: [
-      { name: "Alice", amount: 500 },
-      { name: "Bob", amount: 300 },
-      { name: "Charlie", amount: 200 },
-    ],
-    comments: [
-      { user: "Alice", text: "Excited for this!", time: "2024-06-10" },
-      { user: "Bob", text: "How will data be shared?", time: "2024-06-09" },
-    ],
-    shareUrl: "https://paperfans.io/project/1",
-  },
-};
+    totalRequired: number;
+    raised: number;
+    tokenPrice: number;
+    deadline: string;
+  };
+  governance?: {
+    votingRights: number;
+    pastVotes: Array<{
+      id: number;
+      desc: string;
+      result: string;
+      date: string;
+    }>;
+  };
+  progress?: {
+    currentMilestone: string;
+    lastUpdated: string;
+    logs: Array<{
+      msg: string;
+      time: string;
+    }>;
+    artifacts: Array<{
+      name: string;
+      url: string;
+    }>;
+  };
+  returns?: {
+    revenueModels: string[];
+    profitBreakdown: Array<{
+      label: string;
+      value: number;
+    }>;
+    payouts: Array<{
+      funder: string;
+      amount: number;
+    }>;
+    contractProof: string;
+  };
+  community?: {
+    supporters: Array<{
+      name: string;
+      amount: number;
+    }>;
+    comments: Array<{
+      user: string;
+      text: string;
+      time: string;
+    }>;
+    shareUrl: string;
+  };
+}
 
 const tabList = [
   { key: "basic", label: "📄 Basic Information" },
@@ -113,16 +111,137 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 export default function ProjectPage() {
+  const params = useParams();
+  const { toast } = useToast();
   const [tab, setTab] = useState("basic");
   const [comment, setComment] = useState("");
   const [copied, setCopied] = useState(false);
   const [fundModalOpen, setFundModalOpen] = useState(false);
   const [musdtAmount, setMusdtAmount] = useState("");
   const [mockWallet, setMockWallet] = useState(1000); // mock wallet balance
+  
+  // Project data state
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch project data
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!params?.id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/projects/${params.id}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Project not found");
+          }
+          throw new Error("Failed to load project");
+        }
+        
+        const projectData: Project = await response.json();
+        
+        // Transform API data to match our expected format
+        const transformedProject: ProjectDetail = {
+          ...projectData,
+          domain: projectData.category, // Use category as domain for now
+          tags: projectData.category ? [projectData.category] : [],
+          researcher: {
+            name: projectData.authorName,
+            wallet: "0x" + Math.random().toString(36).substring(2, 15), // Mock wallet
+            orcid: "0000-0002-1825-0097", // Mock ORCID
+            avatar: projectData.authorImage || "/next.svg",
+          },
+          proposal: {
+            docUrl: "https://example.com/proposal.pdf", // Mock URL
+            budget: projectData.fundingGoal,
+            currency: "USD",
+            timeline: projectData.timeline ? 
+              (typeof projectData.timeline === 'string' ? 
+                JSON.parse(projectData.timeline) : 
+                projectData.timeline
+              ).map((item: any, index: number) => ({
+                phase: item.phase || `Phase ${index + 1}`,
+                duration: item.estimatedEndDate && item.estimatedStartDate ? 
+                  `${Math.ceil((new Date(item.estimatedEndDate).getTime() - new Date(item.estimatedStartDate).getTime()) / (1000 * 60 * 60 * 24 * 30))}m` : 
+                  "1m",
+                status: item.status || (index === 0 ? "active" : "pending")
+              })) : [
+                { phase: "Planning", duration: "1m", status: "completed" },
+                { phase: "Research", duration: "2m", status: "active" },
+                { phase: "Development", duration: "3m", status: "pending" },
+              ],
+            milestones: [
+              { name: "Project Setup", status: "completed" },
+              { name: "Research Phase", status: "active" },
+              { name: "Development Phase", status: "pending" },
+            ],
+            goalSummary: projectData.abstract,
+          },
+          funding: {
+            totalRequired: projectData.fundingGoal,
+            raised: projectData.currentFunding,
+            tokenPrice: 1.5, // Mock token price
+            deadline: new Date(Date.now() + projectData.daysLeft * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          },
+          governance: {
+            votingRights: 1,
+            pastVotes: [
+              { id: 1, desc: "Approve project setup", result: "Passed", date: "2024-05-01" },
+            ],
+          },
+          progress: {
+            currentMilestone: "Research Phase",
+            lastUpdated: new Date().toLocaleString(),
+            logs: [
+              { msg: "Project created successfully", time: new Date().toLocaleDateString() },
+            ],
+            artifacts: [
+              { name: "Project Proposal", url: "https://example.com/proposal.pdf" },
+            ],
+          },
+          returns: {
+            revenueModels: ["Token Royalties", "Licensing", "Open Access"],
+            profitBreakdown: [
+              { label: "Researchers", value: 40 },
+              { label: "Funders", value: 40 },
+              { label: "Platform", value: 20 },
+            ],
+            payouts: [],
+            contractProof: "0x" + Math.random().toString(36).substring(2, 15),
+          },
+          community: {
+            supporters: [],
+            comments: [
+              { user: "System", text: "Project created", time: new Date().toLocaleDateString() },
+            ],
+            shareUrl: `${window.location.origin}/project/${params?.id}`,
+          },
+        };
+        
+        setProject(transformedProject);
+      } catch (err) {
+        console.error('Error fetching project:', err);
+        setError(err instanceof Error ? err.message : "Failed to load project");
+        toast({
+          title: "Error",
+          description: err instanceof Error ? err.message : "Failed to load project",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [params?.id, toast]);
 
   // Pie chart placeholder
   function PieChart({ data }: { data: { label: string; value: number }[] }) {
-    // Just a placeholder, not a real chart
     return (
       <div className="flex space-x-4">
         {data.map((d) => (
@@ -137,12 +256,38 @@ export default function ProjectPage() {
 
   // Copy to clipboard
   const handleCopy = () => {
-    navigator.clipboard.writeText(mockProject.community.shareUrl);
+    if (!project?.community?.shareUrl) return;
+    navigator.clipboard.writeText(project.community.shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
   };
 
-  const tokenPrice = mockProject.funding.tokenPrice;
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-neon-cyan" />
+          <p className="text-gray-400">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !project) {
+    return (
+      <div className="min-h-screen pt-20 bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-400">Project Not Found</h2>
+          <p className="text-gray-400 mb-4">{error || "The project you're looking for doesn't exist."}</p>
+          <Button onClick={() => window.history.back()}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const tokenPrice = project.funding.tokenPrice;
   const paperTokens = musdtAmount && parseFloat(musdtAmount) > 0 ? (parseFloat(musdtAmount) / tokenPrice) : 0;
 
   return (
@@ -151,8 +296,8 @@ export default function ProjectPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{mockProject.title}</h1>
-            <p className="text-gray-400 max-w-2xl">{mockProject.abstract}</p>
+            <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
+            <p className="text-gray-400 max-w-2xl">{project.abstract}</p>
           </div>
           <Button className="sci-fi-button px-6 py-2 text-lg font-semibold shadow-neon-cyan" onClick={() => setFundModalOpen(true)}>Fund This Project</Button>
         </div>
@@ -179,20 +324,20 @@ export default function ProjectPage() {
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex-1 space-y-4">
                   <div>
-                    <span className="font-semibold">Title:</span> {mockProject.title}
+                    <span className="font-semibold">Title:</span> {project.title}
                   </div>
                   <div>
                     <span className="font-semibold">Abstract:</span>
-                    <p className="text-gray-300 mt-1">{mockProject.abstract}</p>
+                    <p className="text-gray-300 mt-1">{project.abstract}</p>
                   </div>
                   <div>
                     <span className="font-semibold">Domain / Field:</span>
-                    <Badge className="ml-2">{mockProject.domain}</Badge>
+                    <Badge className="ml-2">{project.domain}</Badge>
                   </div>
                   <div>
                     <span className="font-semibold">Tags:</span>
                     <span className="ml-2 space-x-2">
-                      {mockProject.tags.map((tag) => (
+                      {project.tags?.map((tag) => (
                         <Badge key={tag} className="inline-block">{tag}</Badge>
                       ))}
                     </span>
@@ -200,11 +345,11 @@ export default function ProjectPage() {
                 </div>
                 <div className="flex flex-col items-center gap-2 min-w-[200px]">
                   <Avatar className="w-16 h-16">
-                    <img src={mockProject.researcher.avatar} alt="avatar" className="rounded-full" />
+                    <img src={project.researcher?.avatar} alt="avatar" className="rounded-full" />
                   </Avatar>
-                  <div className="font-semibold">{mockProject.researcher.name}</div>
-                  <div className="text-xs text-gray-400">Wallet: {mockProject.researcher.wallet}</div>
-                  <div className="text-xs text-gray-400">ORCID: {mockProject.researcher.orcid || "-"}</div>
+                  <div className="font-semibold">{project.researcher?.name}</div>
+                  <div className="text-xs text-gray-400">Wallet: {project.researcher?.wallet}</div>
+                  <div className="text-xs text-gray-400">ORCID: {project.researcher?.orcid || "-"}</div>
                 </div>
               </div>
             </SectionCard>
@@ -217,7 +362,7 @@ export default function ProjectPage() {
                   <div>
                     <span className="font-semibold">Proposal Document:</span>
                     <a
-                      href={mockProject.proposal.docUrl}
+                      href={project.proposal?.docUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="ml-2 text-neon-cyan underline flex items-center gap-1"
@@ -226,12 +371,12 @@ export default function ProjectPage() {
                     </a>
                   </div>
                   <div>
-                    <span className="font-semibold">Budget:</span> ${mockProject.proposal.budget.toLocaleString()} {mockProject.proposal.currency}
+                    <span className="font-semibold">Budget:</span> ${project.proposal?.budget.toLocaleString()} {project.proposal?.currency}
                   </div>
                   <div>
                     <span className="font-semibold">Timeline:</span>
                     <div className="flex flex-row gap-4 mt-2">
-                      {mockProject.proposal.timeline.map((step, idx) => (
+                      {project.proposal?.timeline.map((step, idx) => (
                         <div key={idx} className="flex flex-col items-center">
                           <div className={`w-4 h-4 rounded-full mb-1 ${step.status === "completed" ? "bg-neon-green" : step.status === "active" ? "bg-neon-cyan" : "bg-gray-500"}`}></div>
                           <span className="text-xs font-mono">{step.phase}</span>
@@ -242,7 +387,7 @@ export default function ProjectPage() {
                   <div>
                     <span className="font-semibold">Milestone Breakdown:</span>
                     <ul className="list-disc ml-6 mt-1">
-                      {mockProject.proposal.milestones.map((m, i) => (
+                      {project.proposal?.milestones.map((m, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <span>{m.name}</span>
                           <Badge className={m.status === "active" ? "bg-neon-cyan/20 text-neon-cyan" : "bg-gray-600/20 text-gray-400"}>{m.status}</Badge>
@@ -253,7 +398,7 @@ export default function ProjectPage() {
                   </div>
                   <div>
                     <span className="font-semibold">Goal Summary:</span>
-                    <p className="text-gray-300 mt-1">{mockProject.proposal.goalSummary}</p>
+                    <p className="text-gray-300 mt-1">{project.proposal?.goalSummary}</p>
                   </div>
                 </div>
               </div>
@@ -265,17 +410,17 @@ export default function ProjectPage() {
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex-1 space-y-4">
                   <div>
-                    <span className="font-semibold">Total Funds Required:</span> ${mockProject.funding.totalRequired.toLocaleString()}
+                    <span className="font-semibold">Total Funds Required:</span> ${project.funding.totalRequired.toLocaleString()}
                   </div>
                   <div>
-                    <span className="font-semibold">Funds Raised So Far:</span> ${mockProject.funding.raised.toLocaleString()}
-                    <Progress value={mockProject.funding.raised / mockProject.funding.totalRequired * 100} className="mt-2" />
+                    <span className="font-semibold">Funds Raised So Far:</span> ${project.funding.raised.toLocaleString()}
+                    <Progress value={project.funding.raised / project.funding.totalRequired * 100} className="mt-2" />
                   </div>
                   <div>
-                    <span className="font-semibold">Token Price Allocation:</span> 1 token = ${mockProject.funding.tokenPrice} USD
+                    <span className="font-semibold">Token Price Allocation:</span> 1 token = ${project.funding.tokenPrice} USD
                   </div>
                   <div>
-                    <span className="font-semibold">Deadline to Fund:</span> {mockProject.funding.deadline}
+                    <span className="font-semibold">Deadline to Fund:</span> {project.funding.deadline}
                   </div>
                 </div>
               </div>
@@ -286,7 +431,7 @@ export default function ProjectPage() {
             <SectionCard title="Governance Info">
               <div className="space-y-4">
                 <div>
-                  <span className="font-semibold">Voting Rights per Token:</span> {mockProject.governance.votingRights}
+                  <span className="font-semibold">Voting Rights per Token:</span> {project.governance?.votingRights}
                 </div>
                 <div>
                   <span className="font-semibold">Past Votes:</span>
@@ -300,7 +445,7 @@ export default function ProjectPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mockProject.governance.pastVotes.map((vote) => (
+                      {project.governance?.pastVotes.map((vote) => (
                         <tr key={vote.id} className="border-b border-white/5">
                           <td className="py-1">{vote.id}</td>
                           <td>{vote.desc}</td>
@@ -326,15 +471,15 @@ export default function ProjectPage() {
               <div className="space-y-4">
                 <div>
                   <span className="font-semibold">Current Milestone:</span>
-                  <Badge className="ml-2 bg-neon-cyan/20 text-neon-cyan">{mockProject.progress.currentMilestone}</Badge>
+                  <Badge className="ml-2 bg-neon-cyan/20 text-neon-cyan">{project.progress?.currentMilestone}</Badge>
                 </div>
                 <div>
-                  <span className="font-semibold">Last Updated:</span> {mockProject.progress.lastUpdated}
+                  <span className="font-semibold">Last Updated:</span> {project.progress?.lastUpdated}
                 </div>
                 <div>
                   <span className="font-semibold">Update Logs:</span>
                   <ul className="list-disc ml-6 mt-1">
-                    {mockProject.progress.logs.map((log, i) => (
+                    {project.progress?.logs.map((log, i) => (
                       <li key={i} className="text-sm text-gray-300">{log.msg} <span className="text-xs text-gray-500 ml-2">({log.time})</span></li>
                     ))}
                   </ul>
@@ -342,7 +487,7 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Research Artifacts:</span>
                   <ul className="list-disc ml-6 mt-1">
-                    {mockProject.progress.artifacts.map((a, i) => (
+                    {project.progress?.artifacts.map((a, i) => (
                       <li key={i}>
                         <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-neon-cyan underline">{a.name}</a>
                       </li>
@@ -359,14 +504,14 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Expected Revenue Models:</span>
                   <select className="ml-2 bg-black/40 border border-white/10 rounded px-2 py-1 text-white">
-                    {mockProject.returns.revenueModels.map((model) => (
+                    {project.returns?.revenueModels.map((model) => (
                       <option key={model}>{model}</option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <span className="font-semibold">Profit Breakdown Model:</span>
-                  <PieChart data={mockProject.returns.profitBreakdown} />
+                  <PieChart data={project.returns?.profitBreakdown || []} />
                 </div>
                 <div>
                   <span className="font-semibold">History of Payouts:</span>
@@ -378,7 +523,7 @@ export default function ProjectPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mockProject.returns.payouts.map((p, i) => (
+                      {project.returns?.payouts.map((p, i) => (
                         <tr key={i} className="border-b border-white/5">
                           <td>{p.funder}</td>
                           <td>${p.amount}</td>
@@ -390,7 +535,7 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Smart Contract Proof:</span>
                   <div className="ml-2 inline-block bg-black/40 px-2 py-1 rounded text-xs font-mono border border-white/10">
-                    {mockProject.returns.contractProof}
+                    {project.returns?.contractProof}
                   </div>
                 </div>
               </div>
@@ -403,7 +548,7 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Supporters / Funders:</span>
                   <ul className="list-disc ml-6 mt-1">
-                    {mockProject.community.supporters.map((s, i) => (
+                    {project.community?.supporters.map((s, i) => (
                       <li key={i} className="flex items-center gap-2">
                         <span className="font-semibold">{s.name}</span>
                         <span className="text-xs text-gray-400">(${s.amount})</span>
@@ -414,7 +559,7 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Comments / Feedback:</span>
                   <div className="mt-2 space-y-2">
-                    {mockProject.community.comments.map((c, i) => (
+                    {project.community?.comments.map((c, i) => (
                       <div key={i} className="bg-black/30 rounded px-3 py-2 text-sm">
                         <span className="font-semibold">{c.user}:</span> {c.text}
                         <span className="ml-2 text-xs text-gray-500">({c.time})</span>
@@ -434,7 +579,7 @@ export default function ProjectPage() {
                 <div>
                   <span className="font-semibold">Shareable Proposal URL:</span>
                   <div className="flex items-center gap-2 mt-1">
-                    <Input value={mockProject.community.shareUrl} readOnly className="flex-1" />
+                    <Input value={project.community?.shareUrl} readOnly className="flex-1" />
                     <Button size="icon" onClick={handleCopy} variant="outline">
                       <Copy className="w-4 h-4" />
                     </Button>

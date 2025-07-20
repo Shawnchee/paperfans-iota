@@ -60,3 +60,31 @@ export interface ActivityItem {
   description?: string;
   time: string;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+  walletAddress?: string;
+  mustdtBalance: number;
+  orcidId?: string;
+  createdAt: string;
+  updatedAt: string;
+  authUserRef: string;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+  walletAddress?: string;
+  orcidId?: string;
+}
+
+export interface UpdateUserRequest {
+  name?: string;
+  avatarUrl?: string;
+  walletAddress?: string;
+  orcidId?: string;
+}

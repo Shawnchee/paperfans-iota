@@ -35,7 +35,6 @@ export async function GET() {
       recentActivity: project.recent_activity,
       createdAt: project.created_at,
       updatedAt: project.updated_at,
-      fundingTiers: project.funding_tiers,
     })) || []
 
     return NextResponse.json(transformedProjects)
@@ -51,8 +50,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    
-    // Get user from request headers (you'll need to pass the user token from frontend)
+
+    // Get user from request headers
     const authHeader = request.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -60,23 +59,70 @@ export async function POST(request: Request) {
         { status: 401 }
       )
     }
-    
+
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Invalid authentication' },
         { status: 401 }
       )
     }
-    
-    // Validate required fields
+
+    // Enhanced validation for required fields
     const requiredFields = ['title', 'abstract', 'category', 'authorName', 'authorAffiliation', 'fundingGoal', 'daysLeft']
-    for (const field of requiredFields) {
-      if (!body[field]) {
+    const missingFields = requiredFields.filter(field => !body[field] || (typeof body[field] === 'string' && !body[field].trim()))
+
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { error: `Missing required fields: ${missingFields.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    // Additional validation
+    if (body.fundingGoal <= 0) {
+      return NextResponse.json(
+        { error: 'Funding goal must be greater than 0' },
+        { status: 400 }
+      )
+    }
+
+    if (body.daysLeft <= 0 || body.daysLeft > 365) {
+      return NextResponse.json(
+        { error: 'Campaign duration must be between 1 and 365 days' },
+        { status: 400 }
+      )
+    }
+
+    // Validate timeline if provided
+    if (body.timeline && Array.isArray(body.timeline)) {
+      const timelineErrors: string[] = []
+      body.timeline.forEach((item: any, index: number) => {
+        if (!item.phase || !item.phase.trim()) {
+          timelineErrors.push(`Phase ${index + 1}: Phase name is required`)
+        }
+        if (!item.description || !item.description.trim()) {
+          timelineErrors.push(`Phase ${index + 1}: Description is required`)
+        }
+        if (item.amountNeeded && item.amountNeeded < 0) {
+          timelineErrors.push(`Phase ${index + 1}: Amount needed cannot be negative`)
+        }
+      })
+
+      if (timelineErrors.length > 0) {
         return NextResponse.json(
-          { error: `Missing required field: ${field}` },
+          { error: `Timeline validation errors: ${timelineErrors.join(', ')}` },
+          { status: 400 }
+        )
+      }
+
+      // Check if timeline amounts exceed funding goal
+      const totalTimelineAmount = body.timeline.reduce((sum: number, item: any) => sum + (item.amountNeeded || 0), 0)
+      if (totalTimelineAmount > body.fundingGoal) {
+        return NextResponse.json(
+          { error: 'Total timeline amounts cannot exceed the funding goal' },
           { status: 400 }
         )
       }
@@ -84,27 +130,26 @@ export async function POST(request: Request) {
 
     // Transform frontend data to database format
     const projectData = {
-      title: body.title,
-      abstract: body.abstract,
+      title: body.title.trim(),
+      abstract: body.abstract.trim(),
       category: body.category,
-      author_name: body.authorName,
-      author_affiliation: body.authorAffiliation,
-      author_image: body.authorImage,
-      image_url: body.imageUrl,
-      funding_goal: body.fundingGoal,
+      author_name: body.authorName.trim(),
+      author_affiliation: body.authorAffiliation.trim(),
+      author_image: body.authorImage?.trim() || null,
+      image_url: body.imageUrl?.trim() || null,
+      funding_goal: parseFloat(body.fundingGoal),
       current_funding: 0, // Start with 0 funding
       backer_count: 0, // Start with 0 backers
-      days_left: body.daysLeft,
-      technical_approach: body.technicalApproach,
+      days_left: parseInt(body.daysLeft),
+      technical_approach: body.technicalApproach?.trim() || null,
       timeline: body.timeline ? JSON.stringify(body.timeline) : null,
       recent_activity: body.recentActivity ? JSON.stringify(body.recentActivity) : null,
-      funding_tiers: body.fundingTiers ? JSON.stringify(body.fundingTiers) : null,
       author_id: user.id // Add the authenticated user's ID
     }
 
     console.log('--- CREATE PROJECT ATTEMPT ---');
     console.log('Request body:', body);
-    console.log('projectData:', projectData);
+    console.log('Transformed projectData:', projectData);
 
     const { data: project, error } = await supabase
       .from('projects')
@@ -115,11 +160,24 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Error creating project:', error, { projectData, body });
       if (error.details) console.error('Supabase error details:', error.details);
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to create project'
+      if (error.code === '23505') {
+        errorMessage = 'A project with this title already exists'
+      } else if (error.code === '23514') {
+        errorMessage = 'Invalid data provided for one or more fields'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
       return NextResponse.json(
-        { error: 'Failed to create project', details: error.message, supabase: error.details },
+        { error: errorMessage, details: error.message, supabase: error.details },
         { status: 500 }
       )
     }
+
+    console.log('Project created successfully:', project);
 
     // Transform back to frontend format
     const transformedProject = {

@@ -30,6 +30,7 @@ interface CreateProjectFormData {
   category: string;
   domain: string;
   tags: string[];
+  tagsInput?: string;
   authorName: string;
   authorAffiliation: string;
   authorImage: string;
@@ -127,7 +128,7 @@ export function CreateProjectForm() {
     }));
   };
 
-  const updateTimelineItem = (index: number, field: string, value: string) => {
+  const updateTimelineItem = (index: number, field: string, value: any) => {
     setFormData((prev) => ({
       ...prev,
       timeline: prev.timeline.map((item, i) =>
@@ -143,6 +144,42 @@ export function CreateProjectForm() {
     }));
   };
 
+  // Enhanced validation function
+  const validateForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    // Required field validation
+    if (!formData.title.trim()) errors.push("Project title is required");
+    if (!formData.abstract.trim()) errors.push("Abstract is required");
+    if (!formData.category) errors.push("Category is required");
+    if (!formData.domain.trim()) errors.push("Domain/Field is required");
+    if (!formData.authorName.trim()) errors.push("Author name is required");
+    if (!formData.authorAffiliation.trim()) errors.push("Author affiliation is required");
+
+    // Funding validation
+    if (formData.fundingGoal <= 0) errors.push("Funding goal must be greater than 0");
+    if (formData.daysLeft <= 0 || formData.daysLeft > 365) errors.push("Campaign duration must be between 1 and 365 days");
+
+    // Timeline validation
+    if (formData.timeline.length === 0) {
+      errors.push("At least one timeline phase is required");
+    } else {
+      formData.timeline.forEach((item, index) => {
+        if (!item.phase.trim()) errors.push(`Phase ${index + 1}: Phase name is required`);
+        if (!item.description.trim()) errors.push(`Phase ${index + 1}: Description is required`);
+        if (item.amountNeeded < 0) errors.push(`Phase ${index + 1}: Amount needed cannot be negative`);
+      });
+    }
+
+    // Check if timeline amounts exceed funding goal
+    const totalTimelineAmount = formData.timeline.reduce((sum, item) => sum + (item.amountNeeded || 0), 0);
+    if (totalTimelineAmount > formData.fundingGoal) {
+      errors.push("Total timeline amounts cannot exceed the funding goal");
+    }
+
+    return { isValid: errors.length === 0, errors };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -155,26 +192,12 @@ export function CreateProjectForm() {
       return;
     }
 
-    // Validation
-    if (
-      !formData.title ||
-      !formData.abstract ||
-      !formData.category ||
-      !formData.authorName ||
-      !formData.authorAffiliation
-    ) {
+    // Enhanced validation
+    const validation = validateForm();
+    if (!validation.isValid) {
       toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (formData.fundingGoal <= 0) {
-      toast({
-        title: "Invalid Funding Goal",
-        description: "Funding goal must be greater than 0",
+        title: "Validation Errors",
+        description: validation.errors.join(", "),
         variant: "destructive",
       });
       return;
@@ -193,20 +216,22 @@ export function CreateProjectForm() {
         return;
       }
 
-      // Prepare payload to match backend API (camelCase for required fields, timeline as array)
+      // Prepare payload to match backend API expectations
       const payload = {
-        title: formData.title,
-        abstract: formData.abstract,
+        title: formData.title.trim(),
+        abstract: formData.abstract.trim(),
         category: formData.category,
-        authorName: formData.authorName,
-        authorAffiliation: formData.authorAffiliation,
-        authorImage: formData.authorImage,
-        imageUrl: formData.imageUrl,
+        authorName: formData.authorName.trim(),
+        authorAffiliation: formData.authorAffiliation.trim(),
+        authorImage: formData.authorImage.trim() || null,
+        imageUrl: formData.imageUrl.trim() || null,
         fundingGoal: formData.fundingGoal,
         daysLeft: formData.daysLeft,
-        technicalApproach: formData.technicalApproach,
-        timeline: formData.timeline, // send as array, let backend stringify
+        technicalApproach: formData.technicalApproach.trim() || null,
+        timeline: formData.timeline, // Send as array, API will stringify
       };
+
+      console.log('Submitting project data:', payload);
 
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -217,22 +242,26 @@ export function CreateProjectForm() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create project");
-      }
-
       const result = await response.json();
 
+      if (!response.ok) {
+        // Handle specific API errors
+        const errorMessage = result.error || result.details || "Failed to create project";
+        throw new Error(errorMessage);
+      }
+
       toast({
-        title: "Project Created!",
+        title: "Project Created Successfully!",
         description: "Your research project has been published successfully",
       });
 
+      // Navigate to the created project
       router.push(`/project/${result.id}`);
     } catch (error) {
+      console.error('Project creation error:', error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create project. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -242,14 +271,22 @@ export function CreateProjectForm() {
 
   const [researchTeamPct, setResearchTeamPct] = useState(10);
   const platformPct = 5;
-  const maxResearchTeamPct = 95;
-  const investorPct = Math.max(0, 100 - platformPct - researchTeamPct);
+  const maxResearchTeamPct = 95; // Maximum 95% (since platform takes 5%)
+  const investorPct = 95 - researchTeamPct; // Remaining percentage for public investors
   const fundraisingGoal = formData.fundingGoal || 0;
-  const totalTokens = investorPct > 0 ? Math.round(fundraisingGoal / (investorPct / 100)) : 0;
-  const tokensForPlatform = Math.round(totalTokens * (platformPct / 100));
-  const tokensForResearch = Math.round(totalTokens * (researchTeamPct / 100));
-  const tokensForInvestors = Math.round(totalTokens * (investorPct / 100));
-  const researchTeamError = researchTeamPct < 0 || researchTeamPct > (100 - platformPct);
+  
+  // Calculate token amounts based on total funding goal
+  const platformAmount = Math.round(fundraisingGoal * (platformPct / 100));
+  const researchTeamAmount = Math.round(fundraisingGoal * (researchTeamPct / 100));
+  const investorAmount = Math.round(fundraisingGoal * (investorPct / 100));
+  
+  // Total tokens equals the funding goal (1:1 ratio)
+  const totalTokens = fundraisingGoal;
+  const tokensForPlatform = platformAmount;
+  const tokensForResearch = researchTeamAmount;
+  const tokensForInvestors = investorAmount;
+  
+  const researchTeamError = researchTeamPct < 0 || researchTeamPct > maxResearchTeamPct;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -335,8 +372,30 @@ export function CreateProjectForm() {
                 <Label htmlFor="tags" className="text-sm font-medium text-gray-300">Tags (comma-separated)</Label>
                 <Input
                   id="tags"
-                  value={formData.tags.join(", ")}
-                  onChange={e => handleInputChange("tags", e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
+                  value={formData.tagsInput !== undefined ? formData.tagsInput : formData.tags.join(", ")}
+                  onChange={e => {
+                    // Store the raw input for controlled input
+                    handleInputChange("tagsInput", e.target.value);
+                    // Only update tags array when user types a comma or blurs the field
+                    if (e.target.value.includes(",")) {
+                      const tagsArr = e.target.value
+                        .split(",")
+                        .map(t => t.trim())
+                        .filter(Boolean);
+                      handleInputChange("tags", tagsArr);
+                    } else if (e.target.value === "") {
+                      handleInputChange("tags", []);
+                    }
+                  }}
+                  onBlur={e => {
+                    // On blur, always update tags array to match input
+                    const tagsArr = e.target.value
+                      .split(",")
+                      .map(t => t.trim())
+                      .filter(Boolean);
+                    handleInputChange("tags", tagsArr);
+                    handleInputChange("tagsInput", tagsArr.join(", "));
+                  }}
                   className="sci-fi-input text-white placeholder-gray-400"
                   placeholder="AI, Biotech, Drug Discovery"
                 />
@@ -538,12 +597,17 @@ export function CreateProjectForm() {
 
               {/* Tokenomics Section */}
               <div className="space-y-4 mt-8">
-                <h3 className="text-xl font-semibold neon-purple">Tokenomics</h3>
+                <div>
+                  <h3 className="text-xl font-semibold neon-purple">Funding Allocation</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    The platform takes a 5% fee from the total funding. You can allocate the remaining 95% between your research team and public investors.
+                  </p>
+                </div>
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1">
                     <div className="bg-black/60 rounded-lg p-4 shadow space-y-4">
                       <div className="flex items-center justify-between">
-                        <Label className="text-gray-300">Platform Allocation (%)</Label>
+                        <Label className="text-gray-300">Platform Fee (%)</Label>
                         <Input value={platformPct} readOnly className="w-20 text-right bg-gray-800 border-none" />
                       </div>
                       <div className="flex items-center justify-between">
@@ -555,38 +619,38 @@ export function CreateProjectForm() {
                           value={researchTeamPct}
                           onChange={e => {
                             let val = parseInt(e.target.value) || 0;
-                            if (val > (100 - platformPct)) val = 100 - platformPct;
+                            if (val > maxResearchTeamPct) val = maxResearchTeamPct;
                             setResearchTeamPct(val);
                           }}
                           className={`w-20 text-right ${researchTeamError ? 'border-red-500' : ''}`}
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-gray-300">Investor (%)</Label>
+                        <Label className="text-gray-300">Public Investors (%)</Label>
                         <Input value={investorPct} readOnly className="w-20 text-right bg-gray-800 border-none" />
                       </div>
                       {researchTeamError && (
-                        <div className="text-red-400 text-xs mt-1">Total allocation cannot exceed 95% (platform is fixed at 5%)</div>
+                        <div className="text-red-400 text-xs mt-1">Research team allocation cannot exceed 95% (platform fee is fixed at 5%)</div>
                       )}
                     </div>
                   </div>
                   <div className="flex-1">
                     <div className="bg-black/60 rounded-lg p-4 shadow space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-300">Total Token Supply</span>
-                        <span className="font-mono text-neon-cyan">{totalTokens.toLocaleString()}</span>
+                        <span className="text-gray-300">Total Funding Goal</span>
+                        <span className="font-mono text-neon-cyan">${fundraisingGoal.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-300">Platform (5%)</span>
-                        <span className="font-mono">{tokensForPlatform.toLocaleString()}</span>
+                        <span className="text-gray-300">Platform Fee (5%)</span>
+                        <span className="font-mono">${platformAmount.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-300">Research Team ({researchTeamPct}%)</span>
-                        <span className="font-mono">{tokensForResearch.toLocaleString()}</span>
+                        <span className="font-mono">${researchTeamAmount.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-300">Investors ({investorPct}%)</span>
-                        <span className="font-mono">{tokensForInvestors.toLocaleString()}</span>
+                        <span className="text-gray-300">Public Investors ({investorPct}%)</span>
+                        <span className="font-mono">${investorAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -632,12 +696,13 @@ export function CreateProjectForm() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">Phase Name</Label>
+                        <Label className="text-xs text-gray-400">Phase Name *</Label>
                         <Input
                           value={item.phase}
                           onChange={(e) => updateTimelineItem(index, "phase", e.target.value)}
                           className="sci-fi-input text-white placeholder-gray-400"
                           placeholder="Phase name"
+                          required
                         />
                       </div>
                       <div className="space-y-2">
@@ -679,12 +744,13 @@ export function CreateProjectForm() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs text-gray-400">Description</Label>
+                        <Label className="text-xs text-gray-400">Description *</Label>
                         <Textarea
                           value={item.description}
                           onChange={(e) => updateTimelineItem(index, "description", e.target.value)}
                           className="sci-fi-input text-white placeholder-gray-400"
                           placeholder="Describe what will be accomplished in this phase"
+                          required
                         />
                       </div>
                     </div>
@@ -694,7 +760,7 @@ export function CreateProjectForm() {
               {/* Unallocated Funds */}
               <div className="mt-4 text-right">
                 <span className="font-semibold text-gray-300">Unallocated Funds: </span>
-                <span className="font-mono text-neon-cyan">
+                <span className={`font-mono ${formData.fundingGoal - formData.timeline.reduce((sum, item) => sum + (item.amountNeeded || 0), 0) < 0 ? 'text-red-400' : 'text-neon-cyan'}`}>
                   ${(
                     formData.fundingGoal - formData.timeline.reduce((sum, item) => sum + (item.amountNeeded || 0), 0)
                   ).toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -745,6 +811,7 @@ export function CreateProjectForm() {
                 variant="outline"
                 onClick={() => router.back()}
                 className="sci-fi-input hover:bg-neon-cyan/20"
+                disabled={isLoading}
               >
                 Cancel
               </Button>

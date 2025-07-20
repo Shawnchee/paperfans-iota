@@ -1,6 +1,20 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255),
+    avatar_url VARCHAR(500),
+    wallet_address VARCHAR(255),
+    mustdt_balance DECIMAL(15,2) DEFAULT 0,
+    orcid_id VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    auth_user_ref UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE
+);
+
 -- Create projects table
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
@@ -48,6 +62,9 @@ CREATE TABLE IF NOT EXISTS funding_contributions (
 );
 
 -- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_auth_user_ref ON users(auth_user_ref);
+CREATE INDEX IF NOT EXISTS idx_users_wallet_address ON users(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_projects_category ON projects(category);
 CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_funding_tiers_project_id ON funding_tiers(project_id);
@@ -68,12 +85,22 @@ CREATE TRIGGER update_projects_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
+-- Create trigger for users table
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON users 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
 -- Enable Row Level Security (RLS)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE funding_tiers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE funding_contributions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public read access
+CREATE POLICY "Allow public read access to users" ON users
+    FOR SELECT USING (true);
+
 CREATE POLICY "Allow public read access to projects" ON projects
     FOR SELECT USING (true);
 
@@ -86,6 +113,13 @@ CREATE POLICY "Allow public read access to funding contributions" ON funding_con
 -- Create policies for authenticated users to create projects
 CREATE POLICY "Allow authenticated users to create projects" ON projects
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Create policies for authenticated users to manage their own user profile
+CREATE POLICY "Allow users to create their own profile" ON users
+    FOR INSERT WITH CHECK (auth.uid() = auth_user_ref);
+
+CREATE POLICY "Allow users to update their own profile" ON users
+    FOR UPDATE USING (auth.uid() = auth_user_ref);
 
 -- Create policies for authenticated users to update projects
 CREATE POLICY "Allow authenticated users to update projects" ON projects

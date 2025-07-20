@@ -7,11 +7,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    
+
     // Check if this is an authenticated request (for editing)
     const authHeader = request.headers.get('authorization')
     let user = null
-    
+
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7)
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token)
@@ -19,7 +19,7 @@ export async function GET(
         user = authUser
       }
     }
-    
+
     const { data: project, error } = await supabase
       .from('projects')
       .select('*')
@@ -90,10 +90,10 @@ export async function PATCH(
         { status: 401 }
       )
     }
-    
+
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Invalid authentication' },
@@ -138,7 +138,6 @@ export async function PATCH(
     if (body.technicalApproach !== undefined) updateData.technical_approach = body.technicalApproach
     if (body.timeline !== undefined) updateData.timeline = body.timeline ? JSON.stringify(body.timeline) : null
     if (body.recentActivity !== undefined) updateData.recent_activity = body.recentActivity ? JSON.stringify(body.recentActivity) : null
-    if (body.fundingTiers !== undefined) updateData.funding_tiers = body.fundingTiers ? JSON.stringify(body.fundingTiers) : null
 
     const { data: project, error } = await supabase
       .from('projects')

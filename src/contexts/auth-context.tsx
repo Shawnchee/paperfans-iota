@@ -12,11 +12,14 @@ import {
   signOut,
   updateUserProfile,
 } from "@/lib/auth";
+import { User as UserProfile } from "@/lib/types";
+import { ensureUserProfile, getCurrentUserProfile, updateUserProfile as updateProfile } from "@/lib/user-service";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getSession();
       setSession(session);
       setUser(convertUser(session?.user ?? null));
+      
+      // Load user profile if authenticated
+      if (session?.access_token) {
+        const authHeaders = { Authorization: `Bearer ${session.access_token}` };
+        const { user: profile } = await ensureUserProfile(authHeaders);
+        setUserProfile(profile);
+      }
+      
       setLoading(false);
     };
 
@@ -39,6 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(convertUser(session?.user ?? null));
+      
+      // Load user profile if authenticated
+      if (session?.access_token) {
+        const authHeaders = { Authorization: `Bearer ${session.access_token}` };
+        const { user: profile } = await ensureUserProfile(authHeaders);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+      
       setLoading(false);
     });
 
@@ -68,6 +89,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
+  const updateUserProfileData = async (updates: Partial<UserProfile>) => {
+    if (!userProfile || !session?.access_token) return { error: new Error("No user logged in") };
+    
+    const authHeaders = { Authorization: `Bearer ${session.access_token}` };
+    const { user: updatedProfile, error } = await updateProfile(userProfile.id, updates, authHeaders);
+    
+    if (!error && updatedProfile) {
+      setUserProfile(updatedProfile);
+    }
+    return { error };
+  };
+
   const getAuthHeaders = () => {
     if (!session?.access_token) return null;
     return {
@@ -77,12 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextType = {
     user,
+    userProfile,
     session,
     loading,
     signIn,
     signUp,
     signOut: signOutUser,
     updateProfile: updateProfileUser,
+    updateUserProfile: updateUserProfileData,
     getAuthHeaders,
   };
 

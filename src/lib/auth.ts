@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { User, Session } from '@supabase/supabase-js'
+import { User as UserProfile } from './types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -16,19 +17,21 @@ export interface AuthUser {
 
 export interface AuthContextType {
   user: AuthUser | null
+  userProfile: UserProfile | null
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<AuthUser>) => Promise<{ error: any }>
+  updateUserProfile: (updates: Partial<UserProfile>) => Promise<{ error: any }>
   getAuthHeaders: () => { Authorization: string } | null
 }
 
 // Convert Supabase User to our AuthUser format
 export function convertUser(user: User | null): AuthUser | null {
   if (!user) return null
-  
+
   return {
     id: user.id,
     email: user.email || '',
