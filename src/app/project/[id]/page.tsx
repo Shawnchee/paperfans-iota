@@ -1492,7 +1492,7 @@ export default function ProjectPage() {
                     </div>
                     <div className="bg-black/40 px-4 py-3 rounded-lg border border-white/10 font-mono text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-cyan-400">{mockProject.returns.contractProof}</span>
+                        <span className="text-cyan-400">0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e</span>
                         <Button size="sm" variant="ghost" className="text-xs p-1">
                           <Copy className="w-3 h-3" />
                         </Button>

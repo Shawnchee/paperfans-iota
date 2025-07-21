@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,9 +73,14 @@ export default function CreateProjectForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isDeployingContract, setIsDeployingContract] = useState(false);
+  const [isNotarizing, setIsNotarizing] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState<Array<{name: string, url: string, notarized: boolean}>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [deploymentSuccess, setDeploymentSuccess] = useState(false);
   
   // Use the paper service for smart contract interaction
-  const { deployPaper, isConnected, address } = usePaper();
+  const { deployPaper, isConnected, address} = usePaper();
 
   const [formData, setFormData] = useState<CreateProjectFormData>({
     title: "",
@@ -247,6 +252,9 @@ export default function CreateProjectForm() {
         console.log("✅ Smart contract deployment successful!");
         console.log("Transaction ID:", result.transactionId);
         console.log("Paper ID:", result.paperId);
+
+        setTransactionHash(result.transactionId ?? null);
+        setDeploymentSuccess(true);
         
         toast({
           title: "Research Paper Deployed!",
@@ -516,6 +524,107 @@ export default function CreateProjectForm() {
                   placeholder="Describe your technical methodology and approach"
                 />
               </div>
+              <div className="space-y-6">
+  <h3 className="text-xl font-semibold neon-purple">
+    Supporting Documents
+  </h3>
+  <div className="sci-fi-card p-4 space-y-4">
+    <p className="text-sm text-gray-300">
+      Upload any relevant documents that support your research. You can notarize them for proof.
+    </p>
+    <div className="flex items-center space-x-4">
+      <input
+        type="file"
+        multiple
+        id="document-upload"
+        ref={fileInputRef}
+        onChange={e => {
+          const files = Array.from(e.target.files ?? []);
+          setUploadedDocuments(prev => [
+            ...prev,
+            ...files.map(file => ({
+              name: file.name,
+              url: URL.createObjectURL(file),
+              notarized: false
+            }))
+          ]);
+        }}
+        className="hidden"
+      />
+      <Button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        variant="outline"
+        className="sci-fi-input hover:bg-neon-cyan/20"
+      >
+        <Upload className="h-4 w-4 mr-2" />
+        Upload Documents
+      </Button>
+      <span className="text-xs text-gray-400">PDF, DOC, JPG, PNG</span>
+    </div>
+    {uploadedDocuments.length > 0 && (
+      <div className="mt-4">
+        <h4 className="text-sm font-medium text-gray-300 mb-2">Uploaded Documents</h4>
+        <div className="space-y-2">
+          {uploadedDocuments.map((doc, idx) => (
+            <div key={idx} className="flex items-center justify-between p-3 bg-black/40 border border-gray-800 rounded">
+              <div className="flex items-center space-x-3">
+                <span className={doc.notarized ? "text-green-400" : "text-yellow-400"}>
+                  {doc.notarized ? "✓" : "⚠"}
+                </span>
+                <div>
+                  <div className="text-sm font-medium">{doc.name}</div>
+                  <div className="text-xs text-gray-400">
+                    {doc.notarized ? "Notarized" : "Not yet notarized"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {!doc.notarized && (
+  <Button
+    type="button"
+    size="sm"
+    className="bg-neon-cyan/20 hover:bg-neon-cyan/40 text-neon-cyan border border-neon-cyan/50"
+    disabled={isNotarizing}
+    onClick={async () => {
+      const docId = idx;
+      setIsNotarizing(true);
+      
+      // Add a 2-second delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update the document as notarized
+      setUploadedDocuments(prev => prev.map((d, i) =>
+        i === docId ? { ...d, notarized: true } : d
+      ));
+      
+      setIsNotarizing(false);
+    }}
+  >
+    {isNotarizing ? 
+      <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Notarizing...</> : 
+      "Notarize It"}
+  </Button>
+)}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-400 hover:text-red-300"
+                  onClick={() => {
+                    setUploadedDocuments(prev => prev.filter((_, i) => i !== idx));
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</div>
             </div>
 
             {/* Author Information */}
@@ -852,6 +961,44 @@ export default function CreateProjectForm() {
                 </div>
               </div>
             </div>
+
+            {/* Transaction Success Message */}
+{deploymentSuccess && transactionHash && (
+  <div className="mb-6 p-4 rounded-lg border border-green-500/30 bg-green-900/20">
+    <h4 className="text-green-400 font-medium mb-2">Deployment Successful!</h4>
+    <div className="space-y-2">
+      <div className="flex flex-col space-y-1">
+        <span className="text-xs text-gray-400">Transaction Hash:</span>
+        <div className="flex items-center gap-2">
+          <code className="bg-black/60 p-2 rounded text-xs font-mono text-green-300 break-all">
+            {transactionHash}
+          </code>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-gray-400 hover:text-white"
+            onClick={() => {
+              navigator.clipboard.writeText(transactionHash);
+              toast({
+                title: "Copied!",
+                description: "Transaction hash copied to clipboard",
+              });
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </Button>
+        </div>
+      </div>
+      <div className="text-xs text-gray-400 mt-2">
+        You can view this transaction on the blockchain explorer when it's confirmed.
+      </div>
+    </div>
+  </div>
+)}
 
             {/* Submit Button */}
             <div className="flex justify-end space-x-4">

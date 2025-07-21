@@ -79,9 +79,10 @@ export async function POST(request: NextRequest) {
 
     // New contract addresses from the updated deployment
     console.log("📋 Contract addresses:");
-    const contractAddress = "0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e";
-    const treasuryCapAddress = "0xec7e4ce73a383e0dcfbd9e76116f5c455a24716be6496173bbb1f729796b0e96";
-    const policyCapAddress = "0x21417547c0a56bccd7ca38f2db46253af9894294b179262695c75d2595454916";
+    // Update these addresses with the new values from the transaction output
+    const contractAddress = "0x39bc694c6a1f2c24405ec65865f11695d30dd780a44cbbaa1d4e912d1c71953e";
+    const treasuryCapAddress = "0x2e0bd37b08022e6733393db4246a54dc7a3838e60ef3438239d961d03c796f22";
+    const policyCapAddress = "0xb64cc74d82dc13843eaa18c792a07f5bb387410569cd74e1cf722a9979aa611b";
     console.log("  - Contract:", contractAddress);
     console.log("  - Treasury cap:", treasuryCapAddress);
     console.log("  - Policy cap:", policyCapAddress);
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
     console.log("  - Revenue models string:", revenueModelsString);
 
     // Create the command with String types (no more vector<vector<u8>> issues)
-    const createProposalCommand = `iota client call --package ${contractAddress} --module ResearchToken --function create_proposal --args "${title}" "${abstract}" "${category}" "${domain}" "${tagsString}" "${technicalApproach || ''}" "${projectImage || ''}" "${authorName}" "${authorAffiliation}" "${authorImage || ''}" "${orcidId || ''}" ${fundingGoal} ${campaignDurationDays} ${researchTeamPercentage} "${revenueModelsString}" ${treasuryCapAddress} ${policyCapAddress} --gas-budget 100000000`;
+    const createProposalCommand = `iota client call --package ${contractAddress} --module ResearchToken --function create_proposal --args "${title}" "${abstract}" "${category}" "${domain}" "${tagsString}" "${technicalApproach || ''}" "${projectImage || ''}" "${authorName}" "${authorAffiliation}" "${authorImage || ''}" "${orcidId || ''}" ${Math.floor(fundingGoal * 100/85)} ${campaignDurationDays} ${researchTeamPercentage} "${revenueModelsString}" ${treasuryCapAddress} ${policyCapAddress} --gas-budget 100000000`;
 
     console.log('🚀 Executing create_proposal command:');
     console.log('Command:', createProposalCommand);

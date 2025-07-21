@@ -22,9 +22,10 @@ export async function POST(request: NextRequest) {
     console.log(`Converting ${amount} MUSDT to ${amountInBaseUnits} base units`);
 
     // Contract addresses from our deployed contract (Updated)
-    const contractAddress = "0x70a3bbc4b242cc53f8fbd6f8d84123eb7d642adbccbf3ce2bb4e5650cd95b9dd";
-    const treasuryCapAddress = "0x3492a81d2f629d7fe0ab83c7c92bd9c685b5255a83ea5db0aed4c9a443c766ac";
-    const supplyAddress = "0x98d11e2dd7da43c9882b918fd2809c906599dd2eb4c34983471a8851f17c044e";
+// Update these addresses with the new values from the transaction output
+  const contractAddress = "0x13ff5c59055128907c06e6ac9e3eec34d54ca65fdc3085b97414f9031971a2a3";
+  const treasuryCapAddress = "0x0c5d505c7e2b87dbde98d320c34e2e1c27483219f6eebb9d9e51585f94876bea";
+  const supplyAddress = "0x0c56a3986a8597c1658d2daf6f8f28e04135b0a1639dfea1798253dd2bdf145e";
 
     // Execute the mint command using IOTA CLI with base units
     const mintCommand = `iota client call --package ${contractAddress} --module MockUSDT --function mint --args ${treasuryCapAddress} ${supplyAddress} ${amountInBaseUnits} ${userAddress} --gas-budget 10000000`;

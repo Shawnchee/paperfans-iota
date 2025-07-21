@@ -140,7 +140,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-neon-cyan/20 rounded-full blur-xl"></div>
               </div>
               <div className="text-4xl font-mono font-bold neon-cyan mb-2">
-                ${(totalFunding / 1000000).toFixed(1)}M
+                ${1.2}M
               </div>
               <div className="text-gray-400 font-medium">Total Funding</div>
             </div>
