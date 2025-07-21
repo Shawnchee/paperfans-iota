@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
     // New contract addresses from the updated deployment
     console.log("📋 Contract addresses:");
     // Update these addresses with the new values from the transaction output
-    const contractAddress = "0x39bc694c6a1f2c24405ec65865f11695d30dd780a44cbbaa1d4e912d1c71953e";
-    const treasuryCapAddress = "0x2e0bd37b08022e6733393db4246a54dc7a3838e60ef3438239d961d03c796f22";
-    const policyCapAddress = "0xb64cc74d82dc13843eaa18c792a07f5bb387410569cd74e1cf722a9979aa611b";
+const contractAddress = "0xac92720aac9164383936da69136db8e1c77c0bb38b4f9528ad220eeb80e2500c";
+const treasuryCapAddress = "0x6071a50d0d68a5ea36c63f6298ca6d64671b67547bf9467541210b9f4460e76d";
+const policyCapAddress = "0x4f96bc1f0b54131890c7aa6ebfe932f084b83565d171b7a7add97ef9979d75f0";
     console.log("  - Contract:", contractAddress);
     console.log("  - Treasury cap:", treasuryCapAddress);
     console.log("  - Policy cap:", policyCapAddress);

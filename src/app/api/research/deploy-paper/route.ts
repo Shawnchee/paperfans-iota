@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
 
     // Contract addresses from your deployed factory contract
     console.log("📋 Contract addresses:");
-    const factoryAddress = "0x39bc694c6a1f2c24405ec65865f11695d30dd780a44cbbaa1d4e912d1c71953e"; // Replace with your factory contract address
+    const factoryAddress = "0xac92720aac9164383936da69136db8e1c77c0bb38b4f9528ad220eeb80e2500c"; // Replace with your factory contract address
     const musdtAddress = "0x70a3bbc4b242cc53f8fbd6f8d84123eb7d642adbccbf3ce2bb4e5650cd95b9dd";
-    const policyCapId= "0xb64cc74d82dc13843eaa18c792a07f5bb387410569cd74e1cf722a9979aa611b"
+    const policyCapId= "0x4f96bc1f0b54131890c7aa6ebfe932f084b83565d171b7a7add97ef9979d75f0"
     console.log("  - Factory:", factoryAddress);
     console.log("  - MUSDT:", musdtAddress);
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     const ensureHexPrefix = (id: string) => id.startsWith('0x') ? id : `0x${id}`;
 
     // Format the treasury cap ID - assuming this is where the error is
-    const treasuryCapId = "0x2e0bd37b08022e6733393db4246a54dc7a3838e60ef3438239d961d03c796f22"; // Replace with your actual treasury cap ID
+    const treasuryCapId = "0x6071a50d0d68a5ea36c63f6298ca6d64671b67547bf9467541210b9f4460e76d"; // Replace with your actual treasury cap ID
     const formattedTreasuryCapId = ensureHexPrefix(treasuryCapId);
     const formattedPolicyCapId = ensureHexPrefix(policyCapId);
     // Create the deploy paper command
