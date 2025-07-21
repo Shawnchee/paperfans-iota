@@ -17,6 +17,9 @@ export default function OnrampPage() {
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+
+  
   
   const account = useCurrentAccount();
   const { getBalance, mintTokens, isConnected } = useMUSDT();
@@ -58,6 +61,8 @@ export default function OnrampPage() {
         setSuccess(true);
         setBalance((b) => b + amt);
         setAmount("");
+        setTransactionHash(result.transactionId ?? null);
+
         toast({
           title: "MUSDT Purchased Successfully!",
           description: `Transaction ID: ${result.transactionId}`,
@@ -157,12 +162,54 @@ export default function OnrampPage() {
             )}
 
             <Button
-              className="w-full sci-fi-button text-white font-semibold mt-2"
-              onClick={handleBuy}
-              disabled={processing || !amount || parseFloat(amount) <= 0 || !isConnected}
-            >
-              {isConnected ? "Purchase MUSDT" : "Connect Wallet First"}
-            </Button>
+  className="w-full sci-fi-button text-white font-semibold mt-2"
+  onClick={handleBuy}
+  disabled={processing || !amount || parseFloat(amount) <= 0 || !isConnected}
+>
+  {isConnected ? "Purchase MUSDT" : "Connect Wallet First"}
+</Button>
+
+{/* Transaction Hash Display - Add this section */}
+{transactionHash && (
+  <div className="mt-4 p-3 rounded-lg border border-neon-cyan/30 bg-black/60">
+    <div className="text-xs text-gray-400 mb-1">Transaction Hash:</div>
+    <div className="flex items-center">
+      <code className="text-xs font-mono text-neon-cyan truncate mr-2 flex-1">
+        {transactionHash}
+      </code>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+        onClick={() => {
+          navigator.clipboard.writeText(transactionHash);
+          toast({
+            title: "Copied!",
+            description: "Transaction hash copied to clipboard",
+          });
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </Button>
+    </div>
+    <a 
+      href={`https://explorer.iota.org/txblock/${transactionHash}?network=testnet`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-2 text-xs inline-flex items-center text-neon-cyan hover:text-neon-cyan/80 transition-colors"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+      </svg>
+      View on IOTA Explorer
+    </a>
+  </div>
+)}
           </div>
 
           <div className="mt-8 text-xs text-gray-500 text-center">
