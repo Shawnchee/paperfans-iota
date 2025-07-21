@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
 import { Copy, Download, Share2, X, CheckCircle, Clock, TrendingUp, Users, Award, Calendar, Target, Zap, AlertTriangle, Vote } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 // Mock data for demonstration
 const mockProject = {
@@ -143,9 +144,9 @@ const mockProject = {
   returns: {
     revenueModels: ["Token Royalties", "Licensing", "Open Access"],
     profitBreakdown: [
-      { label: "Researchers", value: 40, color: "#00ffff" },
-      { label: "Funders", value: 40, color: "#ff00ff" },
-      { label: "Platform", value: 20, color: "#ffff00" },
+      { label: "Researchers", value: 10, color: "#00ffff" },
+      { label: "Funders", value: 85, color: "#ff00ff" },
+      { label: "Platform", value: 5, color: "#ffff00" },
     ],
     payouts: [
       { funder: "Alice", amount: 500, date: "2024-05-15" },
@@ -1491,12 +1492,24 @@ export default function ProjectPage() {
                       </div>
                     </div>
                     <div className="bg-black/40 px-4 py-3 rounded-lg border border-white/10 font-mono text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-cyan-400">0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e</span>
-                        <Button size="sm" variant="ghost" className="text-xs p-1">
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
+<div className="flex items-center justify-between">
+  <span className="text-cyan-400">0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e</span>
+  <Button 
+    size="sm" 
+    variant="ghost" 
+    className="text-xs p-1"
+    onClick={() => {
+      navigator.clipboard.writeText('0xc6da74ae4dd9bcf244c99d417a682af9319031ee19809fe0cec01576049d6e2e');
+      toast({
+        title: "Copied!",
+        description: "Contract address copied to clipboard",
+        duration: 2000,
+      });
+    }}
+  >
+    <Copy className="w-3 h-3" />
+  </Button>
+</div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <div className="text-center">
